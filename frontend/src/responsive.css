@@ -1,0 +1,6 @@
+/* Responsive override for the status + energy side-by-side layout */
+@media (max-width: 820px) {
+  .status-energy-row {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -1,0 +1,51 @@
+# Vigil — Root .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+.env
+!.env.example
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Test output
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Alembic versions (keep managed)
+# backend/alembic/versions/*.py  <- do NOT ignore these
