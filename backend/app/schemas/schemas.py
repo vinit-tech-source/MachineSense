@@ -117,6 +117,13 @@ class MachineCreate(BaseModel):
     tariff_inr_per_kwh: float = Field(default=8.50, gt=0)
 
 
+class MachineUpdate(BaseModel):
+    name:               Optional[str] = Field(None, min_length=1, max_length=256)
+    location:           Optional[str] = Field(None)
+    rated_power_kw:     Optional[float] = Field(None, ge=0)
+    tariff_inr_per_kwh: Optional[float] = Field(None, gt=0)
+
+
 # ─── Historical (trend chart) ─────────────────────────────────────────────────
 
 class HistoricalPointOut(BaseModel):

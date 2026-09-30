@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.models import Machine, SensorReading, AlertRecord, EnergySession
 from app.schemas.schemas import (
-    MachineOut, MachineCreate, SensorReadingOut,
+    MachineOut, MachineCreate, MachineUpdate, SensorReadingOut,
     AlertRecordOut, AnomalyContributionOut,
     EnergyMetricsOut, HistoricalPointOut, BaselineStatsOut, SignalStats,
 )
@@ -33,6 +33,13 @@ async def get_machine(machine_id: str, db: AsyncSession = Depends(get_db)) -> Ma
     return MachineOut.model_validate(machine)
 
 
+@router.get("", response_model=List[MachineOut], summary="List all machines")
+async def list_machines(db: AsyncSession = Depends(get_db)) -> List[MachineOut]:
+    result = await db.execute(select(Machine).order_by(Machine.name.asc()))
+    machines = result.scalars().all()
+    return [MachineOut.model_validate(m) for m in machines]
+
+
 @router.post("", response_model=MachineOut, status_code=201, summary="Register a machine")
 async def create_machine(payload: MachineCreate, db: AsyncSession = Depends(get_db)) -> MachineOut:
     result = await db.execute(select(Machine).where(Machine.machine_id == payload.machine_id))
@@ -43,6 +50,33 @@ async def create_machine(payload: MachineCreate, db: AsyncSession = Depends(get_
     await db.flush()
     await db.refresh(machine)
     return MachineOut.model_validate(machine)
+
+
+@router.put("/{machine_id}", response_model=MachineOut, summary="Update machine settings")
+async def update_machine(machine_id: str, payload: MachineUpdate, db: AsyncSession = Depends(get_db)) -> MachineOut:
+    result = await db.execute(select(Machine).where(Machine.machine_id == machine_id))
+    machine = result.scalar_one_or_none()
+    if not machine:
+        raise HTTPException(404, f"Machine '{machine_id}' not found.")
+    
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(machine, key, value)
+        
+    await db.flush()
+    await db.refresh(machine)
+    return MachineOut.model_validate(machine)
+
+
+@router.delete("/{machine_id}", status_code=204, summary="Remove a machine")
+async def delete_machine(machine_id: str, db: AsyncSession = Depends(get_db)) -> None:
+    result = await db.execute(select(Machine).where(Machine.machine_id == machine_id))
+    machine = result.scalar_one_or_none()
+    if not machine:
+        raise HTTPException(404, f"Machine '{machine_id}' not found.")
+    
+    await db.delete(machine)
+    await db.flush()
 
 
 # ─── Latest reading ───────────────────────────────────────────────────────────

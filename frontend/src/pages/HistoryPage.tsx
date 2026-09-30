@@ -4,7 +4,7 @@ import { TrendChart } from '../components/TrendChart';
 import { formatTimestamp } from '../utils/format';
 import { signalColor } from '../components/SensorReadoutGrid';
 
-const MACHINE_ID = import.meta.env.VITE_MACHINE_ID ?? 'machine-001';
+import { useMachine } from '../contexts/MachineContext';
 
 type SignalKey = 'current_a' | 'voltage_v' | 'vibration_mm_s' | 'temp_c' | 'rpm' | 'power_w';
 
@@ -25,17 +25,19 @@ const HOUR_OPTIONS = [
 ];
 
 export function HistoryPage() {
+  const { selectedMachineId: MACHINE_ID } = useMachine();
   const [hours, setHours] = useState(1);
   const [activeSignal, setActiveSignal] = useState<SignalKey>('current_a');
   const { readings, loading } = useHistoricalReadings(MACHINE_ID, hours);
 
   return (
     <main className="page" id="main-content" tabIndex={-1}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-6)', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-8)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
         <div>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '4px' }}>TELEMETRY LOGS</div>
           <h1 style={{ marginBottom: 'var(--space-1)' }}>Signal History</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-            Recorded sensor readings for {MACHINE_ID}.
+            Recorded sensor readings for <code style={{ color: 'var(--cyan)' }}>{MACHINE_ID}</code>
           </p>
         </div>
 
@@ -107,26 +109,26 @@ export function HistoryPage() {
               <thead>
                 <tr>
                   <th>Timestamp</th>
-                  <th>Current (A)</th>
-                  <th>Voltage (V)</th>
-                  <th>Vibration (mm/s)</th>
-                  <th>Temp (°C)</th>
-                  <th>RPM</th>
-                  <th>Power (W)</th>
-                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Current (A)</th>
+                  <th style={{ textAlign: 'right' }}>Voltage (V)</th>
+                  <th style={{ textAlign: 'right' }}>Vibration (mm/s)</th>
+                  <th style={{ textAlign: 'right' }}>Temp (°C)</th>
+                  <th style={{ textAlign: 'right' }}>RPM</th>
+                  <th style={{ textAlign: 'right' }}>Power (W)</th>
+                  <th style={{ textAlign: 'center' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {readings.slice(0, 200).map((r, i) => (
                   <tr key={i}>
                     <td style={{ fontFamily: 'var(--font-mono)' }}>{formatTimestamp(r.timestamp)}</td>
-                    <td>{r.current_a.toFixed(2)}</td>
-                    <td>{r.voltage_v.toFixed(1)}</td>
-                    <td>{r.vibration_mm_s.toFixed(2)}</td>
-                    <td>{r.temp_c.toFixed(1)}</td>
-                    <td>{Math.round(r.rpm)}</td>
-                    <td>{r.power_w.toFixed(0)}</td>
-                    <td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{r.current_a.toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{r.voltage_v.toFixed(1)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{r.vibration_mm_s.toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{r.temp_c.toFixed(1)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{Math.round(r.rpm)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--cyan)' }}>{r.power_w.toFixed(0)}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span
                         className={`badge badge-${r.status}`}
                       >

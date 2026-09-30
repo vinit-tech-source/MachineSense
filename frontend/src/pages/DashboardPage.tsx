@@ -12,39 +12,45 @@ import { formatTimestamp } from '../utils/format';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin, Cpu } from 'lucide-react';
 
-// In v1 there is exactly one machine. Machine ID comes from env or defaults.
-const MACHINE_ID = import.meta.env.VITE_MACHINE_ID ?? 'machine-001';
+import { useMachine } from '../contexts/MachineContext';
 
 export function DashboardPage() {
+  const { selectedMachineId: MACHINE_ID, machines } = useMachine();
+  
   const { reading, feedState } = useLiveFeed(MACHINE_ID);
   const { metrics, loading: metricsLoading } = useEnergyMetrics(MACHINE_ID);
   const { alerts, loading: alertsLoading } = useAlerts(MACHINE_ID);
   const { readings: history, loading: historyLoading } = useHistoricalReadings(MACHINE_ID, 1);
 
   const hasReading = reading !== null;
+  const currentMachine = machines.find(m => m.machine_id === MACHINE_ID);
 
   return (
     <main className="page" id="main-content" tabIndex={-1}>
 
       {/* Page header */}
-      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-6)' }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-8)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)' }}>
         <div>
-          <h1 style={{ marginBottom: 'var(--space-1)' }}>Machine Dashboard</h1>
-          <div className="flex items-center gap-3" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '4px' }}>LIVE TELEMETRY</div>
+          <h1 style={{ fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-mono)' }}>
+            {currentMachine?.name ?? MACHINE_ID}
+          </h1>
+          <div className="flex items-center gap-4" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}>
             <div className="flex items-center gap-1">
-              <Cpu size={13} strokeWidth={1.5} />
-              {MACHINE_ID}
+              <Cpu size={14} strokeWidth={1.5} color="var(--cyan)" />
+              ID: {MACHINE_ID}
             </div>
             <div className="flex items-center gap-1">
-              <MapPin size={13} strokeWidth={1.5} />
-              Production Line A
+              <MapPin size={14} strokeWidth={1.5} color="var(--amber)" />
+              {currentMachine?.location ?? 'Unknown location'}
             </div>
           </div>
         </div>
         {hasReading && (
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textAlign: 'right' }}>
-            <div>Last reading</div>
-            <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ textAlign: 'right', background: 'var(--bg-raised)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '4px' }}>LAST READING</div>
+            <div className="flex items-center gap-2" style={{ color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+              <div className="status-dot normal" style={{ width: 8, height: 8 }} />
               {formatTimestamp(reading!.timestamp)}
             </div>
           </div>

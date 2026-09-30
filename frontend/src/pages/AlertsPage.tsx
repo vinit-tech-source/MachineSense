@@ -2,9 +2,10 @@ import { useAlerts } from '../hooks/useAlerts';
 import { AlertLog } from '../components/AlertLog';
 import { RefreshCw } from 'lucide-react';
 
-const MACHINE_ID = import.meta.env.VITE_MACHINE_ID ?? 'machine-001';
+import { useMachine } from '../contexts/MachineContext';
 
 export function AlertsPage() {
+  const { selectedMachineId: MACHINE_ID } = useMachine();
   const { alerts, loading, refresh } = useAlerts(MACHINE_ID);
 
   const criticalCount = alerts.filter(a => a.status === 'critical').length;
@@ -13,11 +14,12 @@ export function AlertsPage() {
 
   return (
     <main className="page" id="main-content" tabIndex={-1}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-6)', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-8)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
         <div>
-          <h1 style={{ marginBottom: 'var(--space-1)' }}>Alert Log</h1>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '4px' }}>EVENT LOG</div>
+          <h1 style={{ marginBottom: 'var(--space-1)' }}>Alert History</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-            Full history of machine alerts with signal attribution for each event.
+            Full history of machine alerts with signal attribution for <code style={{ color: 'var(--cyan)' }}>{MACHINE_ID}</code>.
           </p>
         </div>
         <button

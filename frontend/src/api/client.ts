@@ -16,8 +16,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // ─── Machine ────────────────────────────────────────────────────────────────
+export const listMachines = () =>
+  request<MachineInfo[]>('/api/machines');
+
 export const getMachineInfo = (machineId: string) =>
   request<MachineInfo>(`/api/machines/${machineId}`);
+
+export const createMachine = (data: Partial<MachineInfo>) =>
+  request<MachineInfo>('/api/machines', { method: 'POST', body: JSON.stringify(data) });
+
+export const updateMachine = (machineId: string, data: Partial<MachineInfo>) =>
+  request<MachineInfo>(`/api/machines/${machineId}`, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deleteMachine = (machineId: string) =>
+  request<void>(`/api/machines/${machineId}`, { method: 'DELETE' });
 
 // ─── Latest reading ─────────────────────────────────────────────────────────
 export const getLatestReading = (machineId: string) =>

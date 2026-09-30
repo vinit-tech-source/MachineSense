@@ -7,33 +7,55 @@ import { AlertsPage } from './pages/AlertsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
+import { AllMachinesPage } from './pages/AllMachinesPage';
+import { LandingPage } from './pages/LandingPage';
 import { useLiveFeed } from './hooks/useLiveFeed';
+import { MachineProvider, useMachine } from './contexts/MachineContext';
+import { Outlet } from 'react-router-dom';
 
-const MACHINE_ID = import.meta.env.VITE_MACHINE_ID ?? 'machine-001';
-
-/**
- * Root application component.
- * useLiveFeed is hoisted here so the Navbar connection indicator
- * stays in sync with the actual feed state without prop drilling everywhere.
- */
-function AppShell() {
-  const { feedState } = useLiveFeed(MACHINE_ID);
+function AppLayout() {
+  const { selectedMachineId } = useMachine();
+  const { feedState } = useLiveFeed(selectedMachineId);
 
   return (
-    <BrowserRouter>
+    <>
       <Navbar feedState={feedState} />
+      <Outlet />
+    </>
+  );
+}
+
+function MainLayout() {
+  return (
+    <>
       <Routes>
-        <Route path="/"        element={<DashboardPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/alerts"  element={<AlertsPage />} />
-        <Route path="/settings"element={<SettingsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms"   element={<TermsPage />} />
-        {/* Catch-all: redirect to dashboard */}
-        <Route path="*"        element={<Navigate to="/" replace />} />
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Protected / Console Routes */}
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/all"       element={<AllMachinesPage />} />
+          <Route path="/history"   element={<HistoryPage />} />
+          <Route path="/alerts"    element={<AlertsPage />} />
+          <Route path="/settings"  element={<SettingsPage />} />
+          <Route path="/privacy"   element={<PrivacyPage />} />
+          <Route path="/terms"     element={<TermsPage />} />
+          {/* Catch-all: redirect to dashboard */}
+          <Route path="*"          element={<Navigate to="/dashboard" replace />} />
+        </Route>
       </Routes>
-      <Footer />
-    </BrowserRouter>
+    </>
+  );
+}
+
+function AppShell() {
+  return (
+    <MachineProvider>
+      <BrowserRouter>
+        <MainLayout />
+        <Footer />
+      </BrowserRouter>
+    </MachineProvider>
   );
 }
 

@@ -20,29 +20,20 @@ from app.models.models import SensorReading, AlertRecord, EnergySession, Machine
 from app.schemas.schemas import SensorReadingIngest, SensorReadingOut, MachineStatus
 from app.services.anomaly_service import get_baseline, estimate_rul
 from app.services.power_service import compute_power_w, compute_energy_kwh, compute_cost_inr
+from app.services.notification_service import notification_service
 
 logger = logging.getLogger(__name__)
 
 
 async def ensure_machine_exists(db: AsyncSession, machine_id: str) -> Machine:
     """
-    Auto-create a machine record if not present.
-    In v1 the machine_id comes from sensor config; we don't require a pre-registration step.
+    Ensure a machine record exists before ingesting its data.
+    Raises ValueError if unregistered.
     """
     result = await db.execute(select(Machine).where(Machine.machine_id == machine_id))
     machine = result.scalar_one_or_none()
     if machine is None:
-        from app.core.config import settings
-        machine = Machine(
-            machine_id=machine_id,
-            name=f"Machine {machine_id}",
-            location="",
-            rated_power_kw=0.0,
-            tariff_inr_per_kwh=settings.default_tariff_inr_per_kwh,
-        )
-        db.add(machine)
-        await db.flush()
-        logger.info("Auto-created machine record for machine_id=%s", machine_id)
+        raise ValueError(f"Machine '{machine_id}' is not registered. Cannot ingest data.")
     return machine
 
 
@@ -183,6 +174,15 @@ async def process_reading(
         )
         alert.contributions = [c.model_dump() for c in contributions]
         db.add(alert)
+        
+        # Trigger Mobile Notification
+        if notification_service.is_configured():
+            severity_val = rul.severity_pct if rul.severity_pct is not None else (80.0 if status == MachineStatus.critical else 50.0)
+            await notification_service.notify_anomaly(
+                machine_id=payload.machine_id,
+                severity=severity_val,
+                details=reason
+            )
 
     await db.flush()
     await db.refresh(reading)
