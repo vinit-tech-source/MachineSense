@@ -168,7 +168,8 @@ async def process_reading(
         rpm=payload.rpm,
         status=orm_status,
         alert_reason=reason,
-        est_days_remaining=rul,
+        est_days_remaining=rul.days,
+        rul_severity_pct=rul.severity_pct,
     )
     db.add(reading)
 

@@ -65,6 +65,10 @@ class SensorReadingOut(BaseModel):
     status:             MachineStatus
     alert_reason:       Optional[str]
     est_days_remaining: Optional[int]
+    # Continuous 0–100 % severity score that keeps growing beyond the days floor.
+    # Allows operators to distinguish "just past service threshold" from "far past it".
+    # None during the baseline calibration period (same lifecycle as est_days_remaining).
+    rul_severity_pct:   Optional[float]
 
     model_config = {"from_attributes": True}
 

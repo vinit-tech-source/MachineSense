@@ -75,6 +75,9 @@ class SensorReading(Base):
     )
     alert_reason:    Mapped[str | None] = mapped_column(Text, nullable=True)
     est_days_remaining: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Continuous 0–100 % severity score beyond the days floor.
+    # Populated alongside est_days_remaining; None during calibration.
+    rul_severity_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     machine: Mapped["Machine"] = relationship("Machine", back_populates="readings")
 
