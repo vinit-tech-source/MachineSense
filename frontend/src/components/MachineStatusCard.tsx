@@ -4,13 +4,69 @@ interface Props {
   reading: SensorReading;
 }
 
+// Days-remaining value that equals the RUL floor defined in anomaly_service.py.
+// When est_days_remaining <= RUL_FLOOR_DAYS, we surface severity_pct instead
+// of (or in addition to) the countdown, because the countdown is no longer moving.
+const RUL_FLOOR_DAYS = 5;
+
+/**
+ * Maps rul_severity_pct to a plain-language severity tier.
+ * Operators see a label like "High Risk" rather than a raw number.
+ *
+ * Tiers (chosen to communicate escalating urgency):
+ *   0  – 39 %  → Monitoring     (normal ops, sub-alert degradation visible)
+ *   40 – 69 %  → Elevated Risk  (amber — plan service within the next few shifts)
+ *   70 – 89 %  → High Risk      (deep amber/orange — service soon, do not defer)
+ *   90 – 100 % → Critical Risk  (red — service now, continued operation not advised)
+ */
+function getSeverityTier(pct: number): {
+  label: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  pulseClass?: string;
+} {
+  if (pct >= 90) {
+    return {
+      label: 'Critical Risk',
+      color: 'var(--red)',
+      bgColor: 'var(--red-dim)',
+      borderColor: 'rgba(192, 57, 43, 0.45)',
+      pulseClass: 'severity-pulse-red',
+    };
+  }
+  if (pct >= 70) {
+    return {
+      label: 'High Risk',
+      color: '#D4731A',            // deep amber-orange, distinct from warning amber
+      bgColor: 'rgba(212, 115, 26, 0.14)',
+      borderColor: 'rgba(212, 115, 26, 0.35)',
+      pulseClass: 'severity-pulse-orange',
+    };
+  }
+  if (pct >= 40) {
+    return {
+      label: 'Elevated Risk',
+      color: 'var(--amber)',
+      bgColor: 'var(--amber-dim)',
+      borderColor: 'rgba(232, 160, 32, 0.3)',
+    };
+  }
+  return {
+    label: 'Monitoring',
+    color: 'var(--cyan)',
+    bgColor: 'var(--cyan-dim)',
+    borderColor: 'rgba(0, 180, 216, 0.25)',
+  };
+}
+
 /**
  * Renders the current machine health status card.
  * If status is not normal, shows the alert_reason in full and any signal contributions.
  * Never renders an alert without a reason.
  */
 export function MachineStatusCard({ reading }: Props) {
-  const { status, alert_reason, est_days_remaining } = reading;
+  const { status, alert_reason, est_days_remaining, rul_severity_pct } = reading;
 
   const isCalibrating = status === 'normal' && est_days_remaining === null;
 
@@ -91,7 +147,7 @@ export function MachineStatusCard({ reading }: Props) {
       )}
 
       {/* RUL estimate */}
-      <RULSection days={est_days_remaining} status={status} />
+      <RULSection days={est_days_remaining} severityPct={rul_severity_pct} status={status} />
 
       {/* Normal state message */}
       {status === 'normal' && (
@@ -103,7 +159,13 @@ export function MachineStatusCard({ reading }: Props) {
   );
 }
 
-function RULSection({ days }: { days: number | null; status: string }) {
+interface RULSectionProps {
+  days: number | null;
+  severityPct: number | null;
+  status: string;
+}
+
+function RULSection({ days, severityPct }: RULSectionProps) {
   if (days === null) {
     return (
       <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
@@ -112,23 +174,43 @@ function RULSection({ days }: { days: number | null; status: string }) {
     );
   }
 
-  const pct = Math.min(100, Math.max(0, (days / 90) * 100));
-  const color = days > 30 ? 'var(--green)' : days > 10 ? 'var(--amber)' : 'var(--red)';
+  // ── Normal countdown bar (shown always while days > floor) ──────────────
+  const isAtFloor = days <= RUL_FLOOR_DAYS;
+  const countdownPct = Math.min(100, Math.max(0, (days / 90) * 100));
+  const countdownColor = days > 30 ? 'var(--green)' : days > 10 ? 'var(--amber)' : 'var(--red)';
+
+  // ── Severity tier (shown when at/near the floor AND severity is available) ──
+  const showSeverityBadge = isAtFloor && severityPct !== null;
+  const tier = showSeverityBadge ? getSeverityTier(severityPct!) : null;
 
   return (
     <div>
+      {/* Row: label + days counter */}
       <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <span style={{
+          fontSize: 'var(--text-xs)',
+          color: 'var(--text-muted)',
+          fontWeight: 500,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+        }}>
           Est. days to next service
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-lg)', color, fontWeight: 600 }}>
+        <span style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 'var(--text-lg)',
+          color: countdownColor,
+          fontWeight: 600,
+        }}>
           {days}d
         </span>
       </div>
-      <div className="rul-bar-track">
+
+      {/* Standard countdown progress bar */}
+      <div className="rul-bar-track" style={{ marginBottom: isAtFloor ? 'var(--space-4)' : 0 }}>
         <div
           className="rul-bar-fill"
-          style={{ width: `${pct}%`, background: color }}
+          style={{ width: `${countdownPct}%`, background: countdownColor }}
           role="progressbar"
           aria-valuenow={days}
           aria-valuemin={0}
@@ -136,6 +218,97 @@ function RULSection({ days }: { days: number | null; status: string }) {
           aria-label={`${days} days estimated remaining`}
         />
       </div>
+
+      {/* ── Severity badge — only shown once days is at the floor ─────────── */}
+      {showSeverityBadge && tier && (
+        <div
+          className={tier.pulseClass ?? ''}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-3)',
+            background: tier.bgColor,
+            border: `1px solid ${tier.borderColor}`,
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-3) var(--space-4)',
+          }}
+          role="status"
+          aria-label={`Service urgency: ${tier.label}`}
+        >
+          {/* Severity indicator dot */}
+          <div style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: tier.color,
+            flexShrink: 0,
+            boxShadow: `0 0 8px ${tier.color}80`,
+          }} />
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Label row */}
+            <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
+              <span style={{
+                fontSize: 'var(--text-xs)',
+                fontWeight: 700,
+                letterSpacing: '0.07em',
+                textTransform: 'uppercase',
+                color: tier.color,
+              }}>
+                {tier.label}
+              </span>
+              <span style={{
+                fontSize: 'var(--text-xs)',
+                fontFamily: 'var(--font-mono)',
+                color: tier.color,
+                opacity: 0.75,
+              }}>
+                {severityPct!.toFixed(0)}%
+              </span>
+            </div>
+
+            {/* Severity fill bar — distinct track height from the countdown bar */}
+            <div style={{
+              height: 4,
+              background: 'rgba(255,255,255,0.06)',
+              borderRadius: 2,
+              overflow: 'hidden',
+            }}>
+              <div
+                style={{
+                  width: `${severityPct}%`,
+                  height: '100%',
+                  borderRadius: 2,
+                  background: tier.color,
+                  transition: 'width 1s ease',
+                  boxShadow: `0 0 6px ${tier.color}80`,
+                }}
+                role="progressbar"
+                aria-valuenow={severityPct!}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Severity ${severityPct!.toFixed(0)}%`}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contextual note below the severity badge */}
+      {showSeverityBadge && tier && (
+        <p style={{
+          fontSize: 'var(--text-xs)',
+          color: 'var(--text-muted)',
+          marginTop: 'var(--space-2)',
+          lineHeight: 1.5,
+        }}>
+          {severityPct! >= 90
+            ? 'Service overdue. Continued operation increases failure risk.'
+            : severityPct! >= 70
+            ? 'Schedule service at earliest opportunity to prevent unplanned downtime.'
+            : 'Signals trending toward service limit. Monitor closely and plan service.'}
+        </p>
+      )}
     </div>
   );
 }

@@ -17,6 +17,10 @@ export interface SensorReading {
   status: MachineStatus;
   alert_reason: string | null;   // Plain-language explanation; null when status=normal
   est_days_remaining: number | null; // RUL estimate; null until sufficient baseline
+  // 0–100 % severity score that keeps rising even after days hits the floor (5d).
+  // Allows distinguishing "just past service threshold" from "far past it".
+  // null during the baseline calibration period.
+  rul_severity_pct: number | null;
 }
 
 /** Derived energy/cost metrics computed from readings */

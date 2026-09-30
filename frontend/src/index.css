@@ -499,6 +499,31 @@ a:hover { text-decoration: underline; }
   transition: width 1s ease;
 }
 
+/* ─── RUL Severity Badge Animations ───────────────────────────────────────────── */
+/* Applied to the severity badge container when severity tier requires urgency cues.
+   Pulses the border opacity to draw operator attention without being distracting. */
+
+@keyframes severity-pulse-red-anim {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); border-color: rgba(192, 57, 43, 0.45); }
+  50%       { box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.18); border-color: rgba(192, 57, 43, 0.75); }
+}
+
+@keyframes severity-pulse-orange-anim {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 115, 26, 0); border-color: rgba(212, 115, 26, 0.35); }
+  50%       { box-shadow: 0 0 0 3px rgba(212, 115, 26, 0.14); border-color: rgba(212, 115, 26, 0.55); }
+}
+
+/* Critical Risk (90 %+): 1.6 s pulse — prominent but not epileptic */
+.severity-pulse-red {
+  animation: severity-pulse-red-anim 1.6s ease-in-out infinite;
+}
+
+/* High Risk (70–89 %): 2.4 s pulse — slower than critical to communicate hierarchy */
+.severity-pulse-orange {
+  animation: severity-pulse-orange-anim 2.4s ease-in-out infinite;
+}
+
+
 /* ─── Table ───────────────────────────────────────────────────────────────────── */
 .data-table {
   width: 100%;
