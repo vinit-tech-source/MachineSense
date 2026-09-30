@@ -130,7 +130,7 @@ async def process_reading(
     # ── Anomaly detection ────────────────────────────────────────────────────
     baseline = get_baseline(payload.machine_id)
     status, contributions, reason = baseline.evaluate(reading_dict)
-    rul = estimate_rul(baseline, contributions)
+    rul = estimate_rul(baseline, reading_dict, contributions)
 
     # Add AFTER evaluation so anomaly detection uses prior baseline
     baseline.add(reading_dict)

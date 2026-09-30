@@ -117,13 +117,13 @@ class TestRollingBaseline:
 class TestEstimateRul:
     def test_none_when_baseline_not_ready(self):
         bl = RollingBaseline(min_samples=60)
-        rul = estimate_rul(bl, [])
+        rul = estimate_rul(bl, _healthy_reading(), [])
         assert rul is None
 
     def test_90_days_when_no_anomalies(self):
         bl = RollingBaseline(min_samples=10)
         _populate_baseline(bl, 10)
-        rul = estimate_rul(bl, [])
+        rul = estimate_rul(bl, _healthy_reading(), [])
         assert rul == 90
 
     def test_reduced_days_on_high_z(self):
@@ -135,7 +135,7 @@ class TestEstimateRul:
             actual=10.0, baseline_mean=2.0, baseline_std=0.2,
             z_score=5.0, unit="mm/s",
         )
-        rul = estimate_rul(bl, [contrib])
+        rul = estimate_rul(bl, _healthy_reading(vibration=10.0), [contrib])
         assert rul is not None
         assert rul < 90
         assert rul >= 5
@@ -149,7 +149,7 @@ class TestEstimateRul:
             actual=50.0, baseline_mean=2.0, baseline_std=0.2,
             z_score=12.0, unit="mm/s",
         )
-        rul = estimate_rul(bl, [contrib])
+        rul = estimate_rul(bl, _healthy_reading(vibration=50.0), [contrib])
         assert rul == 5
 
 
@@ -165,7 +165,7 @@ class TestBuildReason:
         assert "10.00 mm/s" in reason
         assert "2.00 mm/s" in reason
 
-    def test_reason_includes_direction(self):
+    def test_reason_includes_direction_above(self):
         contrib = AnomalyContributionOut(
             signal="temp_c", label="Temperature",
             actual=120.0, baseline_mean=65.0, baseline_std=1.0,
@@ -173,6 +173,17 @@ class TestBuildReason:
         )
         reason = _build_reason([contrib])
         assert "above" in reason
+        assert "below" not in reason
+
+    def test_reason_includes_direction_below(self):
+        contrib = AnomalyContributionOut(
+            signal="rpm", label="Shaft speed",
+            actual=1405.0, baseline_mean=1463.0, baseline_std=10.0,
+            z_score=-5.8, unit="RPM",
+        )
+        reason = _build_reason([contrib])
+        assert "below" in reason
+        assert "above" not in reason
 
     def test_empty_contributions_returns_empty(self):
         assert _build_reason([]) == ""

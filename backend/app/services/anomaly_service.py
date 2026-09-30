@@ -152,7 +152,7 @@ def _build_reason(contributions: list[AnomalyContributionOut]) -> str:
     for c in contributions:
         direction = "above" if c.z_score > 0 else "below"
         magnitude = abs(c.z_score)
-        severity  = "well above" if magnitude >= 4.0 else "above" if magnitude >= 2.5 else "slightly above"
+        severity  = f"well {direction}" if magnitude >= 4.0 else f"{direction}" if magnitude >= 2.5 else f"slightly {direction}"
         parts.append(
             f"{c.label} is {severity} its normal range "
             f"({c.actual:.2f} {c.unit} vs baseline {c.baseline_mean:.2f} {c.unit}, "
@@ -161,7 +161,7 @@ def _build_reason(contributions: list[AnomalyContributionOut]) -> str:
     return " ".join(parts)
 
 
-def estimate_rul(baseline: RollingBaseline, contributions: list[AnomalyContributionOut]) -> int | None:
+def estimate_rul(baseline: RollingBaseline, reading: dict, contributions: list[AnomalyContributionOut]) -> int | None:
     """
     F7 (Should): Simple remaining-useful-life estimate.
     Returns None until enough baseline data exists — never fabricates a number.
@@ -169,23 +169,38 @@ def estimate_rul(baseline: RollingBaseline, contributions: list[AnomalyContribut
     Method:
       - Start from a nominal service interval (90 days baseline assumption).
       - Reduce proportionally to the severity of the worst anomaly signal.
-      - This is an approximation with no pretense of certified accuracy.
-        It is marked as an estimate in all UI copy.
+      - Also reduce based on sub-alert trend in vibration and temperature.
     """
     if not baseline.ready:
         return None  # explicitly null until baseline is established
 
-    if not contributions:
-        return 90   # no anomalies detected: full nominal interval
+    worst_anomaly_z = max((abs(c.z_score) for c in contributions), default=0.0)
 
-    worst_z = max(abs(c.z_score) for c in contributions)
-    # Linear degradation: at z=2.5 -> 60d, at z=4 -> 30d, at z>=6 -> 5d
-    if worst_z >= 6.0:
+    # Calculate sub-alert degradation from vibration and temp
+    stats = baseline.stats()
+    vib_z = 0.0
+    if "vibration_mm_s" in reading:
+        vib_mean = stats["vibration_mm_s"]["mean"]
+        vib_std = stats["vibration_mm_s"]["std"]
+        vib_z = max(0, (float(reading["vibration_mm_s"]) - vib_mean) / vib_std)
+
+    temp_z = 0.0
+    if "temp_c" in reading:
+        temp_mean = stats["temp_c"]["mean"]
+        temp_std = stats["temp_c"]["std"]
+        temp_z = max(0, (float(reading["temp_c"]) - temp_mean) / temp_std)
+
+    # Combine the worst anomaly z and the sub-alert trend
+    effective_z = max(worst_anomaly_z, (vib_z + temp_z) / 2.0)
+
+    # Linear degradation
+    if effective_z >= 6.0:
         return 5
-    elif worst_z >= 4.0:
-        return max(5, int(30 - (worst_z - 4.0) * 10))
-    elif worst_z >= 2.5:
-        return max(15, int(60 - (worst_z - 2.5) * 20))
+    elif effective_z >= 4.0:
+        return max(5, int(30 - (effective_z - 4.0) * 10))
+    elif effective_z > 0.0:
+        # Scale from 90 at z=0 to 30 at z=4
+        return max(30, int(90 - effective_z * 15))
     return 90
 
 

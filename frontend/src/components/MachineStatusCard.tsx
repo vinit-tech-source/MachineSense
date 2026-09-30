@@ -12,13 +12,16 @@ interface Props {
 export function MachineStatusCard({ reading }: Props) {
   const { status, alert_reason, est_days_remaining } = reading;
 
+  const isCalibrating = status === 'normal' && est_days_remaining === null;
+
   const statusConfig = {
     normal:   { label: 'Normal',   dotClass: 'normal',   textColor: 'var(--green)', bg: 'var(--green-dim)' },
     warning:  { label: 'Warning',  dotClass: 'warning',  textColor: 'var(--amber)', bg: 'var(--amber-dim)' },
     critical: { label: 'Critical', dotClass: 'critical', textColor: 'var(--red)',   bg: 'var(--red-dim)'   },
+    calibrating: { label: 'Calibrating baseline...', dotClass: 'normal', textColor: 'var(--cyan)', bg: 'var(--cyan-dim)' },
   } as const;
 
-  const cfg = statusConfig[status];
+  const cfg = isCalibrating ? statusConfig.calibrating : statusConfig[status];
 
   return (
     <div
