@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     anomaly_warning_z: float = 2.5
     anomaly_critical_z: float = 4.0
     anomaly_baseline_window: int = 300
+    # Number of *consecutive* readings a signal must exceed the z-threshold before
+    # an alert is raised.  This is the primary defence against single-sample outlier
+    # spikes (electrical transients, brief vibration from nearby equipment, etc.).
+    # Set to 1 to disable debouncing (instant-fire on first threshold crossing).
+    # Recommended range: 3–6 for 3-second polling; increase for higher poll rates.
+    anomaly_debounce_count: int = 5
 
     # Simulator (internal, dev/demo only)
     simulator_machine_id: str = "machine-001"

@@ -6,7 +6,11 @@ Requirements being tested:
   F6: Returns which signal caused it and by how much
   F7: Returns RUL estimate (None until baseline ready)
 
-Critical: zero false alerts during healthy run, and detection under 10s.
+Critical invariants:
+  - Zero false alerts during a healthy run with realistic (Gaussian) noise
+  - Genuine persistent faults detected within debounce_count + 1 readings
+  - A single transient spike must NOT fire an alert (debounce logic)
+  - Alert direction text ("above"/"below") must match the actual deviation direction
 """
 import pytest
 from app.services.anomaly_service import RollingBaseline, estimate_rul, _build_reason
@@ -44,22 +48,24 @@ class TestRollingBaseline:
         assert bl.ready
 
     def test_normal_reading_no_alert(self):
-        bl = RollingBaseline(min_samples=10, warning_z=2.5)
+        """A single healthy reading must never trigger an alert regardless of debounce."""
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=1)
         _populate_baseline(bl, 10)
         status, contribs, reason = bl.evaluate(_healthy_reading())
         assert status == MachineStatus.normal
         assert contribs == []
         assert reason is None
 
-    def test_vibration_fault_detected(self):
-        """Injecting vibration 5x normal should trigger an alert."""
-        bl = RollingBaseline(min_samples=10, warning_z=2.5, critical_z=4.0)
+    def test_vibration_fault_detected_after_debounce(self):
+        """
+        A persistent fault must fire after debounce_count consecutive exceedances.
+        debounce_count=1 means it fires on the very first exceedance.
+        """
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, critical_z=4.0, debounce_count=1)
         _populate_baseline(bl, 10)
 
-        # Healthy std should be very small (all identical) — use a small std guard
-        # RollingBaseline uses max(std, 1e-6), so std ~ 1e-6 for identical samples.
-        # Any nonzero deviation will produce huge z. Inject clear fault.
-        reading = _healthy_reading(vibration=10.0)  # way above baseline of 2.0
+        # Healthy std is ~1e-6 (all identical samples), so any real deviation is huge z.
+        reading = _healthy_reading(vibration=10.0)  # far above baseline of 2.0
         status, contribs, reason = bl.evaluate(reading)
 
         assert status in (MachineStatus.warning, MachineStatus.critical)
@@ -67,8 +73,75 @@ class TestRollingBaseline:
         assert reason is not None
         assert "Vibration" in reason
 
+    def test_single_spike_does_not_fire_with_debounce(self):
+        """
+        A single above-threshold reading followed by a normal reading must NOT
+        fire an alert when debounce_count > 1. This is the core false-alert test.
+        """
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=3)
+        _populate_baseline(bl, 10)
+
+        # One spike — streak = 1, below debounce_count=3
+        bl.evaluate(_healthy_reading(vibration=10.0))  # streak: vib=1
+
+        # Immediately followed by a normal reading — streak resets to 0
+        status, contribs, reason = bl.evaluate(_healthy_reading())
+        assert status == MachineStatus.normal, (
+            "A single spike followed by normal must not fire after reset"
+        )
+
+    def test_persistent_fault_fires_after_N_consecutive(self):
+        """
+        N consecutive readings above threshold must fire on reading number N.
+        N-1 readings must NOT yet fire.
+        """
+        N = 4
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=N)
+        _populate_baseline(bl, 10)
+
+        fault_reading = _healthy_reading(vibration=10.0)
+
+        # First N-1 evaluations must stay silent
+        for i in range(N - 1):
+            status, _, _ = bl.evaluate(fault_reading)
+            assert status == MachineStatus.normal, (
+                f"Should not alert on reading {i+1} of {N} (debounce not yet reached)"
+            )
+
+        # N-th consecutive evaluation must fire
+        status, contribs, reason = bl.evaluate(fault_reading)
+        assert status != MachineStatus.normal, (
+            f"Should alert on reading {N} (debounce reached)"
+        )
+        assert any(c.signal == "vibration_mm_s" for c in contribs)
+
+    def test_streak_resets_on_recovery(self):
+        """
+        After a spike partially builds a streak, a normal reading resets it.
+        Subsequent spikes must rebuild from scratch.
+        """
+        N = 4
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=N)
+        _populate_baseline(bl, 10)
+
+        fault = _healthy_reading(vibration=10.0)
+        normal = _healthy_reading()
+
+        # Build up streak to N-1
+        for _ in range(N - 1):
+            bl.evaluate(fault)
+
+        # One normal reading resets streak
+        bl.evaluate(normal)
+
+        # Next fault reading restarts streak — should NOT fire yet
+        status, _, _ = bl.evaluate(fault)
+        assert status == MachineStatus.normal, (
+            "After streak reset, first re-exceedance must not immediately fire"
+        )
+
     def test_temp_fault_detected(self):
-        bl = RollingBaseline(min_samples=10, warning_z=2.5)
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=1)
         _populate_baseline(bl, 10)
         reading = _healthy_reading(temp=120.0)
         status, contribs, reason = bl.evaluate(reading)
@@ -76,7 +149,7 @@ class TestRollingBaseline:
         assert any(c.signal == "temp_c" for c in contribs)
 
     def test_current_fault_detected(self):
-        bl = RollingBaseline(min_samples=10, warning_z=2.5)
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=1)
         _populate_baseline(bl, 10)
         reading = _healthy_reading(current=50.0)
         status, contribs, reason = bl.evaluate(reading)
@@ -95,7 +168,7 @@ class TestRollingBaseline:
 
     def test_contributions_sorted_by_severity(self):
         """Most severe signal should be first in the contributions list."""
-        bl = RollingBaseline(min_samples=10, warning_z=2.5)
+        bl = RollingBaseline(min_samples=10, warning_z=2.5, debounce_count=1)
         _populate_baseline(bl, 10)
         reading = _healthy_reading(vibration=10.0, temp=120.0)
         _, contribs, _ = bl.evaluate(reading)
@@ -106,12 +179,26 @@ class TestRollingBaseline:
         """After window_size readings, old data is evicted."""
         bl = RollingBaseline(window=50, min_samples=10)
         _populate_baseline(bl, 50)
-        # Now add noise to shift the baseline
+        # Now add data to shift the baseline median
         for _ in range(50):
             bl.add(_healthy_reading(current=20.0))
         stats = bl.stats()
-        # Baseline mean should have shifted toward 20.0
+        # Baseline median should have shifted toward 20.0
         assert stats["current_a"]["mean"] > 12.0
+
+    def test_mad_baseline_robust_to_single_spike(self):
+        """
+        A single massive spike must not corrupt the MAD-based baseline median.
+        This tests the core MAD robustness property.
+        """
+        bl = RollingBaseline(min_samples=10, warning_z=2.5)
+        _populate_baseline(bl, 99)   # 99 healthy readings
+        bl.add(_healthy_reading(vibration=500.0))  # one massive outlier
+        stats = bl.stats()
+        # Median should still be close to 2.0 (the healthy value)
+        assert abs(stats["vibration_mm_s"]["mean"] - 2.0) < 0.5, (
+            "MAD baseline median should be robust to a single outlier spike"
+        )
 
 
 class TestEstimateRul:
@@ -151,6 +238,65 @@ class TestEstimateRul:
         )
         rul = estimate_rul(bl, _healthy_reading(vibration=50.0), [contrib])
         assert rul == 5
+
+    def test_rul_decay_is_monotone_on_worsening_trend(self):
+        """
+        Step 4 verification: slowly worsening vibration+temp must produce a
+        monotonically non-increasing RUL sequence.
+
+        Note on baseline adaptation:
+          We build the baseline with realistically noisy (but healthy) readings,
+          then evaluate degrading readings WITHOUT feeding them back in.  This
+          mirrors real-world behaviour: the machine degrades after a healthy
+          calibration period, and the rolling window still reflects healthy history.
+          We use varied baseline samples (not identical) so the MAD is non-zero
+          and z-scores are finite, giving a meaningful decay curve.
+        """
+        import random as _random
+        _random.seed(42)  # deterministic for the test
+
+        bl = RollingBaseline(min_samples=60)
+        # Build baseline with realistic Gaussian noise so MAD is non-zero
+        for _ in range(200):  # use 200 to fill window well beyond min_samples
+            bl.add({
+                "current_a":      _random.gauss(10.5, 0.3),
+                "voltage_v":      _random.gauss(230.0, 1.5),
+                "vibration_mm_s": _random.gauss(2.1, 0.2),
+                "temp_c":         _random.gauss(65.0, 0.5),
+                "rpm":            _random.gauss(1450.0, 10.0),
+            })
+
+        # Now simulate slow degradation across 80 steps WITHOUT updating the baseline.
+        # Vibration: 2.1 → 7.0 mm/s, Temperature: 65 → 80 °C
+        results = []
+        STEPS = 80
+        for i in range(STEPS):
+            frac = i / (STEPS - 1)
+            vib = 2.1 + frac * 4.9    # 2.1 → 7.0
+            temp = 65.0 + frac * 15.0  # 65 → 80
+            reading = {
+                "current_a":      10.5,
+                "voltage_v":      230.0,
+                "vibration_mm_s": vib,
+                "temp_c":         temp,
+                "rpm":            1450.0,
+            }
+            rul = estimate_rul(bl, reading, [])
+            results.append(rul)
+            # Do NOT add reading to baseline — baseline stays anchored to healthy period
+
+        # Must be monotonically non-increasing (worsening readings → shorter RUL)
+        for i in range(1, len(results)):
+            assert results[i] <= results[i - 1], (
+                f"RUL increased at step {i}: {results[i-1]} → {results[i]} "
+                f"(not monotone with frozen healthy baseline)"
+            )
+
+        # Final RUL must be meaningfully lower than starting RUL
+        assert results[-1] < results[0], (
+            f"RUL should decrease over a worsening trend: "
+            f"start={results[0]}, end={results[-1]}"
+        )
 
 
 class TestBuildReason:
