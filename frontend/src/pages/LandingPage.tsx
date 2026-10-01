@@ -88,7 +88,7 @@ export function LandingPage() {
       <div style={{ marginTop: '72px' }}>
         
         {/* 8 & 9. HERO SECTION */}
-        <section className="container" style={{ padding: 'var(--space-12) var(--space-6)', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
+        <section className="container bg-pattern" style={{ padding: 'var(--space-12) var(--space-6)', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             
             {/* Hero Left */}
@@ -104,15 +104,15 @@ export function LandingPage() {
                 Machine Intelligence Platform
               </div>
               <h1 style={{ 
-                fontSize: 'clamp(2.5rem, 4vw, 4rem)', 
-                fontWeight: 600, 
+                fontSize: 'clamp(2.5rem, 4vw, 4.5rem)', 
+                fontWeight: 700, 
                 lineHeight: 1.1, 
                 letterSpacing: '-0.02em',
                 marginBottom: 'var(--space-6)',
                 wordBreak: 'break-word'
               }}>
                 Know Your Machines <br/>
-                <span style={{ color: 'var(--cyan)' }}>Before They Fail.</span>
+                <span className="text-gradient">Before They Fail.</span>
               </h1>
               <p style={{
                 fontSize: 'var(--text-lg)',
@@ -141,10 +141,8 @@ export function LandingPage() {
             </div>
 
             {/* Hero Right - Dashboard Preview */}
-            <div className="hero-dashboard-preview" style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-strong)',
-              borderRadius: '12px',
+            <div className="hero-dashboard-preview animate-float glass-panel" style={{
+              borderRadius: '16px',
               boxShadow: 'var(--hero-shadow)',
               position: 'relative',
               overflow: 'hidden',
@@ -366,17 +364,15 @@ export function LandingPage() {
               </p>
             </div>
             
-            <div style={{ 
-              background: 'var(--bg-raised)', 
-              border: '1px solid var(--border-default)', 
-              borderRadius: '12px', 
+            <div className="glass-panel" style={{ 
+              borderRadius: '16px', 
               position: 'relative',
               overflow: 'hidden',
               minHeight: '360px',
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              boxShadow: 'var(--shadow-md)'
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)'
             }}>
               <div style={{
                 position: 'absolute',
@@ -573,13 +569,12 @@ export function LandingPage() {
             
             {/* Left: Phone Mockup */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ 
+              <div className="animate-float glass-panel" style={{ 
                 width: '320px', 
                 height: '620px', 
-                background: 'var(--bg-surface)', 
                 border: '12px solid var(--text-primary)', 
                 borderRadius: '40px', 
-                boxShadow: 'var(--shadow-lg), 0 0 0 1px var(--border-default)', 
+                boxShadow: '0 30px 60px rgba(0,0,0,0.4), 0 0 0 1px var(--border-default)', 
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',

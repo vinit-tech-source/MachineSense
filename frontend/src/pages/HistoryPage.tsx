@@ -4,6 +4,7 @@ import { TrendChart } from '../components/TrendChart';
 import { formatTimestamp } from '../utils/format';
 import { signalColor } from '../components/SensorReadoutGrid';
 
+import { Download } from 'lucide-react';
 import { useMachine } from '../contexts/MachineContext';
 
 type SignalKey = 'current_a' | 'voltage_v' | 'vibration_mm_s' | 'temp_c' | 'rpm' | 'power_w';
@@ -27,8 +28,18 @@ const HOUR_OPTIONS = [
 export function HistoryPage() {
   const { selectedMachineId: MACHINE_ID } = useMachine();
   const [hours, setHours] = useState(1);
-  const [activeSignal, setActiveSignal] = useState<SignalKey>('current_a');
+  const [activeSignals, setActiveSignals] = useState<SignalKey[]>(['vibration_mm_s', 'temp_c']);
   const { readings, loading } = useHistoricalReadings(MACHINE_ID, hours);
+
+  const toggleSignal = (key: SignalKey) => {
+    setActiveSignals(prev => {
+      if (prev.includes(key)) {
+        return prev.length > 1 ? prev.filter(k => k !== key) : prev;
+      } else {
+        return prev.length >= 3 ? [...prev.slice(1), key] : [...prev, key];
+      }
+    });
+  };
 
   return (
     <main className="page" id="main-content" tabIndex={-1}>
@@ -57,30 +68,42 @@ export function HistoryPage() {
         </div>
       </div>
 
-      {/* Signal tabs */}
-      <div
-        className="flex gap-2"
-        style={{ marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}
-        role="tablist"
-        aria-label="Signal selector"
-      >
-        {SIGNALS.map(sig => {
-          const color = signalColor(sig.key);
-          return (
-            <button
-              key={sig.key}
-              role="tab"
-              aria-selected={activeSignal === sig.key}
-              className={`btn ${activeSignal === sig.key ? 'btn-secondary' : 'btn-ghost'}`}
-              style={activeSignal === sig.key ? { borderColor: color, color } : {}}
-              onClick={() => setActiveSignal(sig.key)}
-              id={`history-signal-${sig.key}`}
-            >
-              {sig.label}
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>({sig.unit})</span>
-            </button>
-          );
-        })}
+      <div style={{ marginBottom: 'var(--space-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Signal tabs */}
+        <div
+          className="flex gap-2"
+          style={{ flexWrap: 'wrap' }}
+          role="tablist"
+          aria-label="Signal selector"
+        >
+          {SIGNALS.map(sig => {
+            const color = signalColor(sig.key);
+            const isActive = activeSignals.includes(sig.key);
+            return (
+              <button
+                key={sig.key}
+                role="tab"
+                aria-selected={isActive}
+                className={`btn ${isActive ? 'btn-secondary' : 'btn-ghost'}`}
+                style={isActive ? { borderColor: color, color } : {}}
+                onClick={() => toggleSignal(sig.key)}
+                id={`history-signal-${sig.key}`}
+              >
+                {sig.label}
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>({sig.unit})</span>
+              </button>
+            );
+          })}
+        </div>
+        
+        {activeSignals.length > 1 && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ width: '12px', height: '2px', background: 'var(--text-muted)' }} /> Normalized Scale (0-100%)
+            </div>
+            <span>Select up to 3 to overlay</span>
+          </div>
+        )}
       </div>
 
       {/* Chart */}
@@ -88,15 +111,25 @@ export function HistoryPage() {
         {loading ? (
           <div className="skeleton" style={{ height: 280 }} />
         ) : (
-          <TrendChart readings={readings} signal={activeSignal} height={280} />
+          <TrendChart readings={readings} signals={activeSignals} height={280} />
         )}
       </div>
 
-      {/* Raw data table */}
       <div className="card">
-        <h2 style={{ fontSize: 'var(--text-md)', marginBottom: 'var(--space-4)' }}>
-          Raw Readings ({readings.length} records)
-        </h2>
+        <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-4)' }}>
+          <h2 style={{ fontSize: 'var(--text-md)' }}>
+            Raw Readings ({readings.length} records)
+          </h2>
+          <a
+            href={`${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/machines/${MACHINE_ID}/readings/export?hours=${hours}`}
+            className="btn btn-secondary"
+            download
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Download size={14} />
+            Export CSV
+          </a>
+        </div>
         {loading ? (
           <div className="flex flex-col gap-2">
             {[...Array(5)].map((_, i) => <div key={i} className="skeleton" style={{ height: 36 }} />)}
@@ -141,7 +174,7 @@ export function HistoryPage() {
             </table>
             {readings.length > 200 && (
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', padding: 'var(--space-3) var(--space-4)' }}>
-                Showing 200 of {readings.length} records. Export functionality is on the roadmap.
+                Showing 200 of {readings.length} records.
               </p>
             )}
           </div>

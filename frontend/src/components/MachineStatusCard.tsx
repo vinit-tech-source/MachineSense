@@ -1,4 +1,5 @@
 import type { SensorReading } from '../types';
+import { useBaselineStats } from '../hooks/useBaselineStats';
 
 interface Props {
   reading: SensorReading;
@@ -147,7 +148,7 @@ export function MachineStatusCard({ reading }: Props) {
       )}
 
       {/* RUL estimate */}
-      <RULSection days={est_days_remaining} severityPct={rul_severity_pct} status={status} />
+      <RULSection days={est_days_remaining} severityPct={rul_severity_pct} status={status} machineId={reading.machine_id} />
 
       {/* Normal state message */}
       {status === 'normal' && (
@@ -163,13 +164,37 @@ interface RULSectionProps {
   days: number | null;
   severityPct: number | null;
   status: string;
+  machineId: string;
 }
 
-function RULSection({ days, severityPct }: RULSectionProps) {
+function RULSection({ days, severityPct, machineId }: RULSectionProps) {
+  const { stats, loading } = useBaselineStats(machineId);
+
   if (days === null) {
+    const count = stats?.sample_count ?? 0;
+    const required = 60; // From ANOMALY_MIN_BASELINE_SAMPLES
+    const pct = Math.min(100, (count / required) * 100);
+    
     return (
-      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-        Remaining-useful-life estimate: not yet available. Requires sufficient baseline history.
+      <div style={{ padding: 'var(--space-3) 0' }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase' }}>
+            Calibrating Baseline
+          </span>
+          <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>
+            {count} / {required}
+          </span>
+        </div>
+        <div style={{ height: 4, background: 'var(--bg-raised)', borderRadius: 2, overflow: 'hidden' }}>
+          <div
+            style={{
+              width: `${pct}%`,
+              height: '100%',
+              background: 'var(--cyan)',
+              transition: 'width 1s ease',
+            }}
+          />
+        </div>
       </div>
     );
   }

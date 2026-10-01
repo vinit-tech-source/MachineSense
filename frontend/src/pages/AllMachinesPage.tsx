@@ -26,12 +26,23 @@ function MachineCard({ machineId, name }: { machineId: string, name: string }) {
           ID: <code style={{ color: 'var(--text-secondary)' }}>{machineId}</code>
         </p>
         {reading && (
-          <div className="grid grid-cols-2 gap-2" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-            <div>I: {reading.current_a.toFixed(1)} A</div>
-            <div>V: {reading.voltage_v.toFixed(0)} V</div>
-            <div>Vib: {reading.vibration_mm_s.toFixed(1)} mm/s</div>
-            <div>T: {reading.temp_c.toFixed(1)} °C</div>
-            <div>RPM: {reading.rpm.toFixed(0)}</div>
+          <div style={{ padding: 'var(--space-3)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+              Health Score
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ 
+                fontSize: 'var(--text-lg)', 
+                fontWeight: 600, 
+                fontFamily: 'var(--font-mono)',
+                color: reading.status === 'critical' ? 'var(--red)' : reading.status === 'warning' ? 'var(--amber)' : 'var(--green)'
+              }}>
+                {reading.rul_severity_pct !== null && reading.rul_severity_pct !== undefined 
+                  ? Math.round(100 - Math.min(reading.rul_severity_pct, 100))
+                  : (reading.status === 'critical' ? 0 : reading.status === 'warning' ? 50 : 100)}
+              </span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>/ 100</span>
+            </div>
           </div>
         )}
       </div>

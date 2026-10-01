@@ -55,11 +55,14 @@ def create_app() -> FastAPI:
     # ── Lifespan ──────────────────────────────────────────────────────────────
     @app.on_event("startup")
     async def startup() -> None:
-        global _mqtt_task
+        global _mqtt_task, _scheduler_task
         logger.info("Creating database tables...")
         await create_tables()
         logger.info("Starting MQTT subscriber...")
         _mqtt_task = asyncio.create_task(mqtt_subscriber_loop(), name="mqtt-subscriber")
+        logger.info("Starting shift report scheduler...")
+        from app.services.scheduler_service import shift_report_loop
+        _scheduler_task = asyncio.create_task(shift_report_loop(interval_hours=8), name="shift-scheduler")
 
     @app.on_event("shutdown")
     async def shutdown() -> None:

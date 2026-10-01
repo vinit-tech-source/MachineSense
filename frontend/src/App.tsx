@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { DashboardPage } from './pages/DashboardPage';
@@ -13,12 +14,43 @@ import { useLiveFeed } from './hooks/useLiveFeed';
 import { MachineProvider, useMachine } from './contexts/MachineContext';
 import { Outlet } from 'react-router-dom';
 
+/**
+ * Reads the `?machine=<id>` search param from the current URL and syncs it
+ * into MachineContext so direct links like `/dashboard?machine=machine-002`
+ * correctly switch the active machine.
+ */
+function MachineParamSync() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { machines, selectedMachineId, setSelectedMachineId } = useMachine();
+
+  useEffect(() => {
+    const machineParam = searchParams.get('machine');
+    if (!machineParam) return;
+    // Only switch if the machine actually exists in the registry
+    const exists = machines.find(m => m.machine_id === machineParam);
+    if (exists && machineParam !== selectedMachineId) {
+      setSelectedMachineId(machineParam);
+    }
+    // Remove the param from the URL (clean it up) once applied
+    if (exists) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('machine');
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, machines, selectedMachineId, setSelectedMachineId, setSearchParams]);
+
+  return null;
+}
+
 function AppLayout() {
   const { selectedMachineId } = useMachine();
   const { feedState } = useLiveFeed(selectedMachineId);
 
   return (
     <>
+      <MachineParamSync />
       <Navbar feedState={feedState} />
       <Outlet />
     </>

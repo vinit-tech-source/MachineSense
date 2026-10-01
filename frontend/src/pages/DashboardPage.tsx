@@ -130,7 +130,7 @@ export function DashboardPage() {
                     >
                       {sig === 'current_a' ? 'Current (A)' : sig === 'vibration_mm_s' ? 'Vibration (mm/s)' : 'Temperature (°C)'}
                     </div>
-                    <TrendChart readings={history} signal={sig} height={120} />
+                    <TrendChart readings={history} signals={[sig]} height={120} />
                   </div>
                 ))}
               </div>

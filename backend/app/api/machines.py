@@ -138,6 +138,53 @@ async def get_readings_history(
         for r in rows
     ]
 
+import io
+from fastapi.responses import StreamingResponse
+import csv
+
+@router.get(
+    "/{machine_id}/readings/export",
+    summary="Export historical readings as CSV",
+)
+async def export_readings_csv(
+    machine_id: str,
+    hours: float = Query(default=24, ge=1, le=8760, description="Number of hours to look back"),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    result = await db.execute(
+        select(SensorReading)
+        .where(
+            SensorReading.machine_id == machine_id,
+            SensorReading.timestamp >= since,
+        )
+        .order_by(SensorReading.timestamp.asc())
+    )
+    rows = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["timestamp", "current_a", "voltage_v", "vibration_mm_s", "temp_c", "rpm", "power_w", "status"])
+    for r in rows:
+        writer.writerow([
+            r.timestamp.isoformat(),
+            r.current_a,
+            r.voltage_v,
+            r.vibration_mm_s,
+            r.temp_c,
+            r.rpm,
+            compute_power_w(r.current_a, r.voltage_v),
+            r.status.value,
+        ])
+
+    output.seek(0)
+    filename = f"machine_{machine_id}_export_{int(hours)}h.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 
 # ─── Energy metrics ───────────────────────────────────────────────────────────
 
@@ -226,8 +273,8 @@ async def get_alerts(
     response_model=BaselineStatsOut,
     summary="Get current anomaly detection baseline statistics",
 )
-async def get_baseline_stats(machine_id: str) -> BaselineStatsOut:
-    baseline = get_baseline(machine_id)
+async def get_baseline_stats(machine_id: str, db: AsyncSession = Depends(get_db)) -> BaselineStatsOut:
+    baseline = await get_baseline(db, machine_id)
     stats = baseline.stats()
     return BaselineStatsOut(
         machine_id=machine_id,

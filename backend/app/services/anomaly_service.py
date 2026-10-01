@@ -366,18 +366,44 @@ def estimate_rul(
     return RulEstimate(days=days, severity_pct=severity_pct)
 
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.models import SensorReading
+
 # ─── Per-machine singleton registry ───────────────────────────────────────────
 
 _baselines: Dict[str, RollingBaseline] = {}
 
 
-def get_baseline(machine_id: str) -> RollingBaseline:
+async def get_baseline(db: AsyncSession, machine_id: str) -> RollingBaseline:
     if machine_id not in _baselines:
-        _baselines[machine_id] = RollingBaseline(
+        baseline = RollingBaseline(
             window=settings.anomaly_baseline_window,
             min_samples=settings.anomaly_min_baseline_samples,
             warning_z=settings.anomaly_warning_z,
             critical_z=settings.anomaly_critical_z,
             debounce_count=settings.anomaly_debounce_count,
         )
+        
+        # Hydrate baseline from recent history so it survives server restarts
+        result = await db.execute(
+            select(SensorReading)
+            .where(SensorReading.machine_id == machine_id)
+            .order_by(SensorReading.timestamp.desc())
+            .limit(baseline._window)
+        )
+        # Reverse to get chronological order (oldest to newest)
+        readings = reversed(result.scalars().all())
+        for r in readings:
+            baseline.add({
+                "current_a": r.current_a,
+                "vibration_mm_s": r.vibration_mm_s,
+                "temp_c": r.temp_c,
+                "rpm": r.rpm,
+                "voltage_v": r.voltage_v
+            })
+            
+        _baselines[machine_id] = baseline
+        
     return _baselines[machine_id]
+

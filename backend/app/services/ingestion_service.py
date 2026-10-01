@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.models import SensorReading, AlertRecord, EnergySession, Machine, MachineStatusEnum
@@ -119,7 +119,7 @@ async def process_reading(
     }
 
     # ── Anomaly detection ────────────────────────────────────────────────────
-    baseline = get_baseline(payload.machine_id)
+    baseline = await get_baseline(db, payload.machine_id)
     status, contributions, reason = baseline.evaluate(reading_dict)
     rul = estimate_rul(baseline, reading_dict, contributions)
 
@@ -166,23 +166,37 @@ async def process_reading(
 
     # ── Persist alert record (if not normal) ──────────────────────────────────
     if status != MachineStatus.normal and reason:
-        alert = AlertRecord(
-            timestamp=now,
-            machine_id=payload.machine_id,
-            status=orm_status,
-            alert_reason=reason,
+        # Check if there is already an open alert for this machine
+        existing = await db.execute(
+            select(AlertRecord)
+            .where(AlertRecord.machine_id == payload.machine_id, AlertRecord.resolved_at.is_(None))
+            .limit(1)
         )
-        alert.contributions = [c.model_dump() for c in contributions]
-        db.add(alert)
-        
-        # Trigger Mobile Notification
-        if notification_service.is_configured():
-            severity_val = rul.severity_pct if rul.severity_pct is not None else (80.0 if status == MachineStatus.critical else 50.0)
-            await notification_service.notify_anomaly(
+        if existing.scalar_one_or_none() is None:
+            alert = AlertRecord(
+                timestamp=now,
                 machine_id=payload.machine_id,
-                severity=severity_val,
-                details=reason
+                status=orm_status,
+                alert_reason=reason,
             )
+            alert.contributions = [c.model_dump() for c in contributions]
+            db.add(alert)
+            
+            # Trigger Mobile Notification
+            if notification_service.is_configured():
+                severity_val = rul.severity_pct if rul.severity_pct is not None else (80.0 if status == MachineStatus.critical else 50.0)
+                await notification_service.notify_anomaly(
+                    machine_id=payload.machine_id,
+                    severity=severity_val,
+                    details=reason
+                )
+    elif status == MachineStatus.normal:
+        # If normal, resolve any open alerts for this machine
+        await db.execute(
+            update(AlertRecord)
+            .where(AlertRecord.machine_id == payload.machine_id, AlertRecord.resolved_at.is_(None))
+            .values(resolved_at=now)
+        )
 
     await db.flush()
     await db.refresh(reading)
