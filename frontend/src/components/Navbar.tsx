@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Activity, BarChart2, Bell, Settings, Cpu, Moon, Sun } from 'lucide-react';
+import { Activity, BarChart2, Bell, Settings, Cpu, Moon, Sun, ClipboardList } from 'lucide-react';
 import type { FeedState } from '../types';
 
 interface Props {
@@ -40,40 +40,14 @@ export function Navbar({ feedState }: Props) {
 
   return (
     <nav className="navbar" role="navigation" aria-label="Main navigation">
-      <NavLink to="/" className="navbar-logo" aria-label="Vigil home" style={{ marginRight: 'var(--space-2)' }}>
+      <NavLink to="/" className="navbar-logo" aria-label="MachineSense home" style={{ marginRight: 'var(--space-2)' }}>
         <Cpu size={20} color="var(--cyan)" strokeWidth={1.5} />
-        <span className="navbar-wordmark">Vigil</span>
+        <span className="navbar-wordmark">MachineSense</span>
       </NavLink>
       
-      <div className="flex items-center" style={{ marginRight: 'auto', marginLeft: 'var(--space-6)' }}>
-        <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', marginRight: '12px', fontWeight: 600 }}>MONITORING:</div>
-        <select
-          value={selectedMachineId}
-          onChange={(e) => setSelectedMachineId(e.target.value)}
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--cyan-dim)',
-            color: 'var(--cyan)',
-            padding: '6px 12px',
-            borderRadius: '4px',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 600,
-            fontFamily: 'var(--font-mono)',
-            outline: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 0 10px rgba(0, 180, 216, 0.05)'
-          }}
-        >
-          {machines.map(m => (
-            <option key={m.machine_id} value={m.machine_id} style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
-              {m.name} ({m.machine_id})
-            </option>
-          ))}
-          {machines.length === 0 && <option disabled>No machines</option>}
-        </select>
-      </div>
 
-      <div className="navbar-nav">
+
+      <div className="navbar-nav" style={{ marginLeft: 'auto' }}>
         <NavLink
           to="/all"
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
@@ -98,6 +72,14 @@ export function Navbar({ feedState }: Props) {
         >
           <BarChart2 size={15} strokeWidth={1.5} />
           History
+        </NavLink>
+        <NavLink
+          to="/analytics"
+          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+          id="nav-analytics"
+        >
+          <ClipboardList size={15} strokeWidth={1.5} />
+          Analytics
         </NavLink>
         <NavLink
           to="/alerts"

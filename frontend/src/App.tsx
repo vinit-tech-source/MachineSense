@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { DashboardPage } from './pages/DashboardPage';
@@ -9,10 +10,13 @@ import { SettingsPage } from './pages/SettingsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 import { AllMachinesPage } from './pages/AllMachinesPage';
+import { ComparePage } from './pages/ComparePage';
 import { LandingPage } from './pages/LandingPage';
+import { ManualAnalyticsPage } from './pages/ManualAnalyticsPage';
 import { useLiveFeed } from './hooks/useLiveFeed';
 import { MachineProvider, useMachine } from './contexts/MachineContext';
 import { Outlet } from 'react-router-dom';
+import { ChatbotWidget } from './components/ChatbotWidget';
 
 /**
  * Reads the `?machine=<id>` search param from the current URL and syncs it
@@ -53,6 +57,7 @@ function AppLayout() {
       <MachineParamSync />
       <Navbar feedState={feedState} />
       <Outlet />
+      <ChatbotWidget />
     </>
   );
 }
@@ -67,7 +72,9 @@ function MainLayout() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/all"       element={<AllMachinesPage />} />
+          <Route path="/compare"   element={<ComparePage />} />
           <Route path="/history"   element={<HistoryPage />} />
+          <Route path="/analytics" element={<ManualAnalyticsPage />} />
           <Route path="/alerts"    element={<AlertsPage />} />
           <Route path="/settings"  element={<SettingsPage />} />
           <Route path="/privacy"   element={<PrivacyPage />} />
@@ -80,14 +87,60 @@ function MainLayout() {
   );
 }
 
+// ── Error Boundary ─────────────────────────────────────────────────────────────
+interface ErrorBoundaryState { hasError: boolean; message: string }
+class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+  static getDerivedStateFromError(err: Error): ErrorBoundaryState {
+    return { hasError: true, message: err.message };
+  }
+  componentDidCatch(_err: Error, info: ErrorInfo) {
+    console.error('[MachineSense ErrorBoundary]', info.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100vh', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: 'var(--bg-base)', color: 'var(--text-primary)',
+          fontFamily: 'var(--font-sans)', gap: '16px', padding: '32px',
+        }}>
+          <div style={{ fontSize: '2rem' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Something went wrong</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: 480, textAlign: 'center' }}>
+            {this.state.message || 'An unexpected error occurred. Please reload the page.'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 24px', background: 'var(--cyan)', color: '#000',
+              border: 'none', borderRadius: '6px', fontWeight: 600,
+              cursor: 'pointer', fontSize: '0.875rem'
+            }}
+          >
+            Reload Dashboard
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function AppShell() {
   return (
-    <MachineProvider>
-      <BrowserRouter>
-        <MainLayout />
-        <Footer />
-      </BrowserRouter>
-    </MachineProvider>
+    <ErrorBoundary>
+      <MachineProvider>
+        <BrowserRouter>
+          <MainLayout />
+          <Footer />
+        </BrowserRouter>
+      </MachineProvider>
+    </ErrorBoundary>
   );
 }
 

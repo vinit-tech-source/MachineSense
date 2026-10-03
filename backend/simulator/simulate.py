@@ -34,7 +34,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 import os
 
-API_URL     = os.getenv("VITE_API_URL", "http://localhost:8000")
+API_URL     = os.getenv("VITE_API_URL", "http://127.0.0.1:8000")
 SIM_INTERVAL = float(os.getenv("SIMULATOR_INTERVAL_S", "3"))
 
 # Machine configurations to simulate
@@ -53,6 +53,8 @@ BASELINE = {
     "vibration_mm_s": 2.1,    # mm/s RMS (healthy bearing)
     "temp_c":         65.0,   # °C (normal operating temp)
     "rpm":            1450.0, # RPM (4-pole 50Hz motor, slight slip)
+    "pressure_bar":   6.5,    # Bar (for M3 compressor)
+    "power_factor":   0.85,
 }
 
 # ── Noise levels (std dev) ────────────────────────────────────────────────────
@@ -62,6 +64,14 @@ NOISE = {
     "vibration_mm_s": 0.2,
     "temp_c":         0.5,
     "rpm":            10.0,
+    "pressure_bar":   0.1,
+    "power_factor":   0.02,
+}
+
+# Persistent counters for simulated machines
+MACHINE_STATE = {
+    m_id: {"count_in": 0, "count_out": 0, "reject_count": 0} 
+    for m_id in SIMULATED_MACHINES.keys()
 }
 
 # ── Fault injection parameters ────────────────────────────────────────────────
@@ -98,7 +108,26 @@ def generate_reading(machine_id: str, mode: str, base_mult: float, t: float) -> 
 
         value = base_val + offset + drift + noise
         value = max(0.0, value)  # physical values can't be negative
+        if key == "power_factor":
+            value = min(1.0, value)
         reading[key] = round(value, 4)
+
+    # Increment counters based on simulated production rate (approx 1 unit per 10 seconds)
+    state = MACHINE_STATE[machine_id]
+    # Randomly increment count_in and count_out
+    if random.random() < (SIM_INTERVAL / 10.0):
+        state["count_in"] += 1
+        if random.random() < 0.95:  # 95% yield
+            state["count_out"] += 1
+        else:
+            state["count_out"] += 1
+            state["reject_count"] += 1
+
+    reading["count_in"] = state["count_in"]
+    reading["count_out"] = state["count_out"]
+    reading["reject_count"] = state["reject_count"]
+    reading["is_simulated"] = True
+    reading["confidence_badge"] = "A"
 
     reading["machine_id"] = machine_id
     reading["timestamp"]  = datetime.now(timezone.utc).isoformat()

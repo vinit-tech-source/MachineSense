@@ -67,7 +67,7 @@ function getSeverityTier(pct: number): {
  * Never renders an alert without a reason.
  */
 export function MachineStatusCard({ reading }: Props) {
-  const { status, alert_reason, est_days_remaining, rul_severity_pct } = reading;
+  const { status, operating_state, alert_reason, est_days_remaining, rul_severity_pct } = reading;
 
   const isCalibrating = status === 'normal' && est_days_remaining === null;
 
@@ -78,7 +78,9 @@ export function MachineStatusCard({ reading }: Props) {
     calibrating: { label: 'Calibrating baseline...', dotClass: 'normal', textColor: 'var(--cyan)', bg: 'var(--cyan-dim)' },
   } as const;
 
-  const cfg = isCalibrating ? statusConfig.calibrating : statusConfig[status];
+  const cfg = isCalibrating
+    ? statusConfig.calibrating
+    : (statusConfig[status as keyof typeof statusConfig] ?? statusConfig.normal);
 
   return (
     <div
@@ -104,16 +106,29 @@ export function MachineStatusCard({ reading }: Props) {
             {cfg.label}
           </span>
         </div>
-        <span
-          className="badge"
-          style={{
-            background: `${cfg.textColor}18`,
-            color: cfg.textColor,
-            border: `1px solid ${cfg.textColor}40`,
-          }}
-        >
-          {status.toUpperCase()}
-        </span>
+        <div className="flex items-center gap-2">
+          {/* Operating State Badge */}
+          <span
+            className="badge"
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              color: 'var(--text-secondary)',
+              border: '1px solid rgba(255,255,255,0.15)',
+            }}
+          >
+            {(operating_state || 'UNKNOWN').toUpperCase().replace('_', ' ')}
+          </span>
+          <span
+            className="badge"
+            style={{
+              background: `${cfg.textColor}18`,
+              color: cfg.textColor,
+              border: `1px solid ${cfg.textColor}40`,
+            }}
+          >
+            {(status || 'UNKNOWN').toUpperCase()}
+          </span>
+        </div>
       </div>
 
       {/* Alert reason — mandatory when not normal */}
@@ -168,7 +183,7 @@ interface RULSectionProps {
 }
 
 function RULSection({ days, severityPct, machineId }: RULSectionProps) {
-  const { stats, loading } = useBaselineStats(machineId);
+  const { stats } = useBaselineStats(machineId);
 
   if (days === null) {
     const count = stats?.sample_count ?? 0;

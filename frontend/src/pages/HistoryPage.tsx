@@ -6,6 +6,7 @@ import { signalColor } from '../components/SensorReadoutGrid';
 
 import { Download } from 'lucide-react';
 import { useMachine } from '../contexts/MachineContext';
+import { MachineSelector } from '../components/MachineSelector';
 
 type SignalKey = 'current_a' | 'voltage_v' | 'vibration_mm_s' | 'temp_c' | 'rpm' | 'power_w';
 
@@ -26,10 +27,12 @@ const HOUR_OPTIONS = [
 ];
 
 export function HistoryPage() {
-  const { selectedMachineId: MACHINE_ID } = useMachine();
+  const { selectedMachineId: MACHINE_ID, machines } = useMachine();
   const [hours, setHours] = useState(1);
   const [activeSignals, setActiveSignals] = useState<SignalKey[]>(['vibration_mm_s', 'temp_c']);
   const { readings, loading } = useHistoricalReadings(MACHINE_ID, hours);
+  const currentMachine = machines.find(m => m.machine_id === MACHINE_ID);
+  const shortId = currentMachine ? currentMachine.name.split(' ')[0] : MACHINE_ID;
 
   const toggleSignal = (key: SignalKey) => {
     setActiveSignals(prev => {
@@ -48,16 +51,18 @@ export function HistoryPage() {
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '4px' }}>TELEMETRY LOGS</div>
           <h1 style={{ marginBottom: 'var(--space-1)' }}>Signal History</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-            Recorded sensor readings for <code style={{ color: 'var(--cyan)' }}>{MACHINE_ID}</code>
+            Recorded sensor readings for <code style={{ color: 'var(--cyan)' }}>{shortId}</code>
           </p>
         </div>
 
-        {/* Time range selector */}
-        <div className="flex gap-2" role="radiogroup" aria-label="Time range">
-          {HOUR_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              className={`btn ${hours === opt.value ? 'btn-primary' : 'btn-secondary'}`}
+        {/* Time range selector and Machine Selector */}
+        <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap' }}>
+          <MachineSelector />
+          <div className="flex gap-2" role="radiogroup" aria-label="Time range">
+            {HOUR_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                className={`btn ${hours === opt.value ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setHours(opt.value)}
               aria-pressed={hours === opt.value}
               id={`history-range-${opt.value}`}
@@ -65,6 +70,7 @@ export function HistoryPage() {
               {opt.label}
             </button>
           ))}
+          </div>
         </div>
       </div>
 

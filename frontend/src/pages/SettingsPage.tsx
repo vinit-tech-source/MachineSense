@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, AlertCircle, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Save, AlertCircle, Plus, Trash2, Edit2, Tag, FileText, MapPin, Zap, Coins, ChevronLeft } from 'lucide-react';
 import { useMachine } from '../contexts/MachineContext';
 import { createMachine, updateMachine, deleteMachine } from '../api/client';
 import type { MachineInfo } from '../types';
@@ -82,58 +82,93 @@ export function SettingsPage() {
       </div>
 
       {editingMachine ? (
-        <div className="card" style={{ maxWidth: 640 }}>
-          <h2 style={{ fontSize: 'var(--text-md)', marginBottom: 'var(--space-5)' }}>
-            {isNew ? 'Register New Machine' : 'Edit Machine'}
-          </h2>
-          
-          <div className="flex flex-col gap-4">
-            <Field label="Machine ID" note="Must match the ID sent by the sensor node.">
-              <input
-                type="text"
-                value={editingMachine.machine_id || ''}
-                onChange={e => setEditingMachine({ ...editingMachine, machine_id: e.target.value })}
-                style={inputStyle}
-                disabled={!isNew}
-              />
-            </Field>
-            <Field label="Display name">
-              <input
-                type="text"
-                value={editingMachine.name || ''}
-                onChange={e => setEditingMachine({ ...editingMachine, name: e.target.value })}
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Location">
-              <input
-                type="text"
-                value={editingMachine.location || ''}
-                onChange={e => setEditingMachine({ ...editingMachine, location: e.target.value })}
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Rated power (kW)" note="Nameplate power rating.">
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={editingMachine.rated_power_kw || ''}
-                onChange={e => setEditingMachine({ ...editingMachine, rated_power_kw: parseFloat(e.target.value) })}
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Electricity tariff (INR / kWh)" note="Used to compute session cost.">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={editingMachine.tariff_inr_per_kwh || ''}
-                onChange={e => setEditingMachine({ ...editingMachine, tariff_inr_per_kwh: parseFloat(e.target.value) })}
-                style={inputStyle}
-              />
-            </Field>
-          </div>
+        <div style={{ width: '85%', maxWidth: '1400px', margin: '0 auto', animation: 'fadeIn 0.3s ease-out' }}>
+          <button 
+            className="btn btn-ghost" 
+            onClick={() => setEditingMachine(null)}
+            style={{ marginBottom: 'var(--space-6)', paddingLeft: 0, color: 'var(--text-muted)' }}
+          >
+            <ChevronLeft size={16} /> Back to Machine List
+          </button>
+
+          <div className="card" style={{ padding: 'var(--space-8)', borderTop: '4px solid var(--cyan)' }}>
+            <h2 style={{ fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isNew ? 'Register New Machine' : 'Edit Machine Details'}
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-8)' }}>
+              {isNew ? 'Configure a new sensor node and map it to your factory floor.' : 'Update physical parameters and location data for this node.'}
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-8)' }}>
+              
+              {/* Identity Section */}
+              <div style={{ background: 'var(--bg-base)', padding: 'var(--space-6)', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
+                <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={14} /> Identity & Location
+                </h3>
+                <div className="flex flex-col gap-5">
+                  <Field label="Node / Machine ID" note="Must match sensor hardware ID." icon={<Tag size={16} />}>
+                    <input
+                      type="text"
+                      value={editingMachine.machine_id || ''}
+                      onChange={e => setEditingMachine({ ...editingMachine, machine_id: e.target.value })}
+                      style={inputStyle}
+                      disabled={!isNew}
+                      placeholder="e.g. machine-004"
+                    />
+                  </Field>
+                  <Field label="Display Name" icon={<FileText size={16} />}>
+                    <input
+                      type="text"
+                      value={editingMachine.name || ''}
+                      onChange={e => setEditingMachine({ ...editingMachine, name: e.target.value })}
+                      style={inputStyle}
+                      placeholder="e.g. CNC Turning Lathe"
+                    />
+                  </Field>
+                  <Field label="Factory Location" icon={<MapPin size={16} />}>
+                    <input
+                      type="text"
+                      value={editingMachine.location || ''}
+                      onChange={e => setEditingMachine({ ...editingMachine, location: e.target.value })}
+                      style={inputStyle}
+                      placeholder="e.g. Zone B, Assembly Line 2"
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Specs Section */}
+              <div style={{ background: 'var(--bg-base)', padding: 'var(--space-6)', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
+                <h3 style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={14} /> Operating Parameters
+                </h3>
+                <div className="flex flex-col gap-5">
+                  <Field label="Rated Power (kW)" note="Nameplate power rating." icon={<Zap size={16} />}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={editingMachine.rated_power_kw || ''}
+                      onChange={e => setEditingMachine({ ...editingMachine, rated_power_kw: parseFloat(e.target.value) })}
+                      style={inputStyle}
+                      placeholder="5.0"
+                    />
+                  </Field>
+                  <Field label="Electricity Tariff (₹/kWh)" note="Used to compute session cost." icon={<Coins size={16} />}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editingMachine.tariff_inr_per_kwh || ''}
+                      onChange={e => setEditingMachine({ ...editingMachine, tariff_inr_per_kwh: parseFloat(e.target.value) })}
+                      style={inputStyle}
+                      placeholder="8.50"
+                    />
+                  </Field>
+                </div>
+              </div>
+            </div>
 
           {error && (
             <div
@@ -153,15 +188,25 @@ export function SettingsPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-3" style={{ marginTop: 'var(--space-6)' }}>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              <Save size={14} strokeWidth={1.5} />
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-            <button className="btn btn-ghost" onClick={() => setEditingMachine(null)}>
+          <div className="flex justify-end gap-3" style={{ marginTop: 'var(--space-8)', paddingTop: 'var(--space-6)', borderTop: '1px solid var(--border-default)' }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => setEditingMachine(null)}
+              style={{ padding: '10px 24px' }}
+            >
               Cancel
             </button>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSave} 
+              disabled={saving}
+              style={{ padding: '10px 32px', boxShadow: '0 4px 12px rgba(8, 145, 178, 0.4)' }}
+            >
+              <Save size={16} strokeWidth={2} />
+              {saving ? 'Saving...' : 'Save Configuration'}
+            </button>
           </div>
+        </div>
         </div>
       ) : (
         <div className="card">
@@ -213,36 +258,55 @@ export function SettingsPage() {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: 'var(--bg-base)',
+  background: 'var(--bg-elevated)',
   border: '1px solid var(--border-strong)',
-  borderRadius: '4px',
-  padding: 'var(--space-3) var(--space-4)',
+  borderRadius: '8px',
+  padding: '12px 16px 12px 42px', /* extra left padding for the absolute icon */
   color: 'var(--text-primary)',
   fontFamily: 'var(--font-mono)',
-  fontSize: 'var(--text-sm)',
+  fontSize: '14px',
   outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s'
 };
 
-function Field({ label, note, children }: { label: string; note?: string; children: React.ReactNode }) {
+function Field({ label, note, icon, children }: { label: string; note?: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <label
         style={{
           display: 'block',
-          fontSize: 'var(--text-sm)',
-          fontWeight: 500,
-          color: 'var(--text-secondary)',
-          marginBottom: 'var(--space-2)',
+          fontSize: '12px',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          marginBottom: '8px',
+          letterSpacing: '0.02em'
         }}
       >
         {label}
         {note && (
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
-            {note}
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400, marginLeft: 8 }}>
+            — {note}
           </span>
         )}
       </label>
-      {children}
+      <div style={{ position: 'relative' }}>
+        {icon && (
+          <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--cyan)', pointerEvents: 'none' }}>
+            {icon}
+          </div>
+        )}
+        {children}
+      </div>
+      <style>{`
+        input:focus {
+          border-color: var(--cyan) !important;
+          box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2) !important;
+        }
+        input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }

@@ -11,6 +11,9 @@ Any change here is a change to billed cost — validate carefully.
 """
 from datetime import datetime, timezone
 
+# Standard grid emission factor for India (approx 0.71 kg CO2e / kWh)
+GRID_EMISSION_FACTOR = 0.71
+
 
 def compute_power_w(current_a: float, voltage_v: float) -> float:
     """
@@ -42,11 +45,29 @@ def compute_energy_kwh(
     return round(avg_power_w * delta_h / 1000.0, 6)  # convert W*h to kWh
 
 
-def compute_cost_inr(energy_kwh: float, tariff_inr_per_kwh: float) -> float:
-    """Cost in Indian Rupees for a given energy amount and tariff."""
-    if tariff_inr_per_kwh <= 0:
-        raise ValueError(f"Tariff must be positive, got {tariff_inr_per_kwh}")
-    return round(energy_kwh * tariff_inr_per_kwh, 4)
+def compute_cost_inr(energy_kwh: float, base_tariff: float, dt: datetime = None) -> float:
+    """
+    Cost in Indian Rupees using Time-of-Day (ToD) slabs.
+    - Peak (18:00 to 22:00): 1.5x base tariff
+    - Off-peak (22:00 to 06:00): 0.8x base tariff
+    - Normal (06:00 to 18:00): 1.0x base tariff
+    """
+    if base_tariff <= 0:
+        raise ValueError(f"Tariff must be positive, got {base_tariff}")
+        
+    multiplier = 1.0
+    if dt:
+        hour = dt.hour
+        if 18 <= hour < 22:
+            multiplier = 1.5
+        elif hour >= 22 or hour < 6:
+            multiplier = 0.8
+            
+    return round(energy_kwh * base_tariff * multiplier, 4)
+
+def compute_co2e_kg(energy_kwh: float) -> float:
+    """Scope 2 CO2e emissions based on grid factor."""
+    return round(energy_kwh * GRID_EMISSION_FACTOR, 4)
 
 
 def estimate_load_from_current(

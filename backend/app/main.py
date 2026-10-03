@@ -32,9 +32,9 @@ _mqtt_task: asyncio.Task | None = None
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Vigil Machine Health API",
+        title="MachineSense Machine Health API",
         description=(
-            "Backend for Vigil — real-time machine health and energy monitoring "
+            "Backend for MachineSense — real-time machine health and energy monitoring "
             "for SME manufacturing. Accepts readings via HTTP POST or MQTT, "
             "runs anomaly detection, and streams live data to dashboard clients via WebSocket."
         ),

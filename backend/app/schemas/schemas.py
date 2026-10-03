@@ -14,6 +14,15 @@ class MachineStatus(str, Enum):
     critical = "critical"
 
 
+class OperatingState(str, Enum):
+    off       = "off"
+    startup   = "startup"
+    idle      = "idle"
+    producing = "producing"
+    high_load = "high_load"
+    overload  = "overload"
+
+
 # ─── Ingest ──────────────────────────────────────────────────────────────────
 
 class SensorReadingIngest(BaseModel):
@@ -32,6 +41,15 @@ class SensorReadingIngest(BaseModel):
     vibration_mm_s: float = Field(..., ge=0, le=10_000)
     temp_c:         float = Field(..., ge=-40, le=1_000)
     rpm:            float = Field(..., ge=0, le=1_000_000)
+    
+    # New YieldWatt Fields
+    power_factor:   Optional[float] = Field(None, ge=0, le=1)
+    count_in:       Optional[int] = Field(None, ge=0)
+    count_out:      Optional[int] = Field(None, ge=0)
+    reject_count:   Optional[int] = Field(None, ge=0)
+    pressure_bar:   Optional[float] = Field(None, ge=0)
+    is_simulated:   bool = Field(False)
+    confidence_badge: Optional[str] = Field(None)
 
     @model_validator(mode="after")
     def assign_timestamp(self) -> "SensorReadingIngest":
@@ -62,7 +80,15 @@ class SensorReadingOut(BaseModel):
     vibration_mm_s:     float
     temp_c:             float
     rpm:                float
+    power_factor:       Optional[float]
+    count_in:           Optional[int]
+    count_out:          Optional[int]
+    reject_count:       Optional[int]
+    pressure_bar:       Optional[float]
+    is_simulated:       bool
+    confidence_badge:   Optional[str]
     status:             MachineStatus
+    operating_state:    OperatingState
     alert_reason:       Optional[str]
     est_days_remaining: Optional[int]
     # Continuous 0–100 % severity score that keeps growing beyond the days floor.
@@ -79,6 +105,17 @@ class EnergyMetricsOut(BaseModel):
     power_w:       float
     energy_kwh:    float
     cost_inr:      float
+    co2e_kg:       float
+    
+    productive_kwh:  float
+    idle_kwh:        float
+    startup_kwh:     float
+    reject_kwh:      float
+    degradation_kwh: float
+    peak_kwh:        float
+    
+    good_units:    int
+    sec:           Optional[float] # Specific Energy Consumption (kWh/good unit)
     session_start: datetime
 
 
@@ -135,6 +172,7 @@ class HistoricalPointOut(BaseModel):
     rpm:            float
     power_w:        float
     status:         MachineStatus
+    operating_state: OperatingState
 
     model_config = {"from_attributes": True}
 
@@ -155,3 +193,30 @@ class BaselineStatsOut(BaseModel):
     rpm:            SignalStats
     voltage_v:      SignalStats
     computed_at:    datetime
+
+# ─── Manual Analytics ─────────────────────────────────────────────────────────
+
+class ManualAnalyticsInput(BaseModel):
+    date: str = Field(..., description="Date in YYYY-MM-DD format")
+    working_hours: float = Field(..., gt=0)
+    production_units: int = Field(..., ge=0)
+
+class ProblemRemedy(BaseModel):
+    problem: str
+    remedy: str
+    severity: str
+
+class ManualAnalyticsOut(BaseModel):
+    date: str
+    machine_id: str
+    working_hours: float
+    production_units: int
+    total_energy_kwh: float
+    cost_inr: float
+    co2e_kg: float
+    yield_rate_pct: float
+    sec: Optional[float]
+    avg_power_w: float
+    avg_temp_c: float
+    avg_vibration_mm_s: float
+    problems_detected: List[ProblemRemedy]

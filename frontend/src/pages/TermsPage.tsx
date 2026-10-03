@@ -10,10 +10,10 @@ export function TermsPage() {
 
         <Section title="Scope of this software">
           <p>
-            Vigil is a machine health and energy monitoring tool for single industrial machines in
+            MachineSense is a machine health and energy monitoring tool for single industrial machines in
             small and medium manufacturing environments. It is not a safety-rated system and is not
             designed or certified for use in hazardous or explosive environments. Do not rely on
-            Vigil as the sole safety mechanism for any machine or process.
+            MachineSense as the sole safety mechanism for any machine or process.
           </p>
         </Section>
 
@@ -28,14 +28,14 @@ export function TermsPage() {
         <Section title="Limitation of liability">
           <p>
             MachineSense is not liable for machine damage, downtime, energy costs, or any other direct
-            or indirect loss arising from use of or reliance on Vigil outputs. All operational decisions
+            or indirect loss arising from use of or reliance on MachineSense outputs. All operational decisions
             remain the sole responsibility of the machine operator and facility manager.
           </p>
         </Section>
 
         <Section title="Acceptable use">
           <p>
-            Vigil must be deployed only in environments where its capabilities and limitations are clearly
+            MachineSense must be deployed only in environments where its capabilities and limitations are clearly
             understood by the responsible operators. The software must not be modified or redeployed in
             a way that misrepresents its data as certified measurements.
           </p>
@@ -44,7 +44,7 @@ export function TermsPage() {
         <Section title="Data responsibility">
           <p>
             The customer is responsible for the security and integrity of the database, network, and
-            infrastructure on which Vigil runs. MachineSense has no access to customer data.
+            infrastructure on which MachineSense runs. MachineSense has no access to customer data.
           </p>
         </Section>
 

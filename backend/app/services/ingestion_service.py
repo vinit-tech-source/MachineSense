@@ -16,10 +16,10 @@ from datetime import datetime, timezone
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import SensorReading, AlertRecord, EnergySession, Machine, MachineStatusEnum
-from app.schemas.schemas import SensorReadingIngest, SensorReadingOut, MachineStatus
+from app.models.models import SensorReading, AlertRecord, EnergySession, Machine, MachineStatusEnum, OperatingStateEnum
+from app.schemas.schemas import SensorReadingIngest, SensorReadingOut, MachineStatus, OperatingState
 from app.services.anomaly_service import get_baseline, estimate_rul
-from app.services.power_service import compute_power_w, compute_energy_kwh, compute_cost_inr
+from app.services.power_service import compute_power_w, compute_energy_kwh, compute_cost_inr, compute_co2e_kg
 from app.services.notification_service import notification_service
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,13 @@ async def get_or_create_energy_session(
             session_start=now,
             energy_kwh=0.0,
             cost_inr=0.0,
+            co2e_kg=0.0,
+            productive_kwh=0.0,
+            idle_kwh=0.0,
+            startup_kwh=0.0,
+            reject_kwh=0.0,
+            degradation_kwh=0.0,
+            peak_kwh=0.0,
             is_active=True,
         )
         db.add(session)
@@ -83,6 +90,13 @@ async def get_or_create_energy_session(
                     session_start=now,
                     energy_kwh=0.0,
                     cost_inr=0.0,
+                    co2e_kg=0.0,
+                    productive_kwh=0.0,
+                    idle_kwh=0.0,
+                    startup_kwh=0.0,
+                    reject_kwh=0.0,
+                    degradation_kwh=0.0,
+                    peak_kwh=0.0,
                     is_active=True,
                 )
                 db.add(session)
@@ -130,6 +144,23 @@ async def process_reading(
     power_w = compute_power_w(payload.current_a, payload.voltage_v)
     session = await get_or_create_energy_session(db, machine, now)
 
+    # ── Operating State ───────────────────────────────────────────────────────
+    # Determine operating state based on load % (current vs rated current)
+    rated_i = (machine.rated_power_kw * 1000) / 230.0 if machine.rated_power_kw > 0 else 15.0
+    load_pct = (payload.current_a / rated_i) * 100 if rated_i > 0 else 0
+    
+    op_state = OperatingStateEnum.off
+    if load_pct < 2:
+        op_state = OperatingStateEnum.off
+    elif load_pct < 15:
+        op_state = OperatingStateEnum.idle
+    elif load_pct < 85:
+        op_state = OperatingStateEnum.producing
+    elif load_pct < 110:
+        op_state = OperatingStateEnum.high_load
+    else:
+        op_state = OperatingStateEnum.overload
+
     # Get previous reading for energy delta
     result = await db.execute(
         select(SensorReading)
@@ -143,9 +174,37 @@ async def process_reading(
         prev_power_w = compute_power_w(prev_reading.current_a, prev_reading.voltage_v)
         prev_ts = prev_reading.timestamp.replace(tzinfo=timezone.utc)
         delta_kwh = compute_energy_kwh(power_w, prev_power_w, prev_ts, now)
-        delta_cost = compute_cost_inr(delta_kwh, machine.tariff_inr_per_kwh)
+        delta_cost = compute_cost_inr(delta_kwh, machine.tariff_inr_per_kwh, dt=now)
+        delta_co2e = compute_co2e_kg(delta_kwh)
         session.energy_kwh += delta_kwh
         session.cost_inr   += delta_cost
+        session.co2e_kg    += delta_co2e
+        
+        # Calculate good units (if counters are provided)
+        delta_out = 0
+        delta_reject = 0
+        if payload.count_out is not None and prev_reading.count_out is not None:
+            delta_out = max(0, payload.count_out - prev_reading.count_out)
+            delta_reject = max(0, (payload.reject_count or 0) - (prev_reading.reject_count or 0))
+            delta_good = max(0, delta_out - delta_reject)
+            session.good_units += delta_good
+            
+        # Energy Waterfall Allocation
+        if 18 <= now.hour < 22:
+            session.peak_kwh += delta_kwh
+        elif op_state == OperatingStateEnum.startup:
+            session.startup_kwh += delta_kwh
+        elif op_state in (OperatingStateEnum.idle, OperatingStateEnum.off):
+            session.idle_kwh += delta_kwh
+        elif rul.severity_pct and rul.severity_pct > 50:
+            session.degradation_kwh += delta_kwh
+        elif delta_out > 0 and delta_reject > 0:
+            reject_ratio = min(1.0, delta_reject / delta_out)
+            rej_kwh = delta_kwh * reject_ratio
+            session.reject_kwh += rej_kwh
+            session.productive_kwh += (delta_kwh - rej_kwh)
+        else:
+            session.productive_kwh += delta_kwh
 
     # ── Persist reading ───────────────────────────────────────────────────────
     orm_status = MachineStatusEnum(status.value)
@@ -157,7 +216,15 @@ async def process_reading(
         vibration_mm_s=payload.vibration_mm_s,
         temp_c=payload.temp_c,
         rpm=payload.rpm,
+        power_factor=payload.power_factor,
+        count_in=payload.count_in,
+        count_out=payload.count_out,
+        reject_count=payload.reject_count,
+        pressure_bar=payload.pressure_bar,
+        is_simulated=payload.is_simulated,
+        confidence_badge=payload.confidence_badge,
         status=orm_status,
+        operating_state=op_state,
         alert_reason=reason,
         est_days_remaining=rul.days,
         rul_severity_pct=rul.severity_pct,

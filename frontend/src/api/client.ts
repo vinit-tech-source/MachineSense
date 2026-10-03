@@ -1,7 +1,7 @@
-import type { SensorReading, EnergyMetrics, AlertRecord, HistoricalPoint, BaselineStats, MachineInfo } from '../types';
+import type { SensorReading, EnergyMetrics, AlertRecord, HistoricalPoint, BaselineStats, MachineInfo, DailySummary } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-const WS_BASE  = import.meta.env.VITE_WS_URL  ?? 'ws://localhost:8000';
+const API_BASE = 'http://127.0.0.1:8001';
+const WS_BASE  = 'ws://127.0.0.1:8001';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -56,6 +56,45 @@ export const getAlerts = (machineId: string, limit: number = 50) =>
 // ─── Baseline stats ──────────────────────────────────────────────────────────
 export const getBaseline = (machineId: string) =>
   request<BaselineStats>(`/api/machines/${machineId}/baseline`);
+
+// ─── Daily summaries ─────────────────────────────────────────────────────────
+export const getDailySummaries = (machineId: string, days: number = 14) =>
+  request<DailySummary[]>(`/api/machines/${machineId}/daily?days=${days}`);
+
+// ─── Manual Analytics ────────────────────────────────────────────────────────
+export interface ManualAnalyticsInput {
+  date: string;
+  working_hours: number;
+  production_units: number;
+}
+
+export interface ProblemRemedy {
+  problem: string;
+  remedy: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface ManualAnalyticsOut {
+  date: string;
+  machine_id: string;
+  working_hours: number;
+  production_units: number;
+  total_energy_kwh: number;
+  cost_inr: number;
+  co2e_kg: number;
+  yield_rate_pct: number;
+  sec: number | null;
+  avg_power_w: number;
+  avg_temp_c: number;
+  avg_vibration_mm_s: number;
+  problems_detected: ProblemRemedy[];
+}
+
+export const generateManualAnalytics = (machineId: string, data: ManualAnalyticsInput) =>
+  request<ManualAnalyticsOut>(`/api/machines/${machineId}/manual-analytics`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 
 // ─── Ingest (HTTP fallback) ──────────────────────────────────────────────────
 export const ingestReading = (reading: Omit<SensorReading, 'id' | 'status' | 'alert_reason' | 'est_days_remaining'>) =>

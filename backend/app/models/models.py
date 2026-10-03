@@ -21,6 +21,15 @@ class MachineStatusEnum(str, PyEnum):
     critical = "critical"
 
 
+class OperatingStateEnum(str, PyEnum):
+    off       = "off"
+    startup   = "startup"
+    idle      = "idle"
+    producing = "producing"
+    high_load = "high_load"
+    overload  = "overload"
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -70,8 +79,19 @@ class SensorReading(Base):
     vibration_mm_s:  Mapped[float]    = mapped_column(Float, nullable=False)
     temp_c:          Mapped[float]    = mapped_column(Float, nullable=False)
     rpm:             Mapped[float]    = mapped_column(Float, nullable=False)
+    power_factor:    Mapped[float | None] = mapped_column(Float, nullable=True)
+    count_in:        Mapped[int | None]   = mapped_column(Integer, nullable=True)
+    count_out:       Mapped[int | None]   = mapped_column(Integer, nullable=True)
+    reject_count:    Mapped[int | None]   = mapped_column(Integer, nullable=True)
+    pressure_bar:    Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_simulated:    Mapped[bool]     = mapped_column(Boolean, nullable=False, default=False)
+    confidence_badge: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    
     status:          Mapped[MachineStatusEnum] = mapped_column(
         Enum(MachineStatusEnum), nullable=False, default=MachineStatusEnum.normal
+    )
+    operating_state: Mapped[OperatingStateEnum] = mapped_column(
+        Enum(OperatingStateEnum), nullable=False, default=OperatingStateEnum.off
     )
     alert_reason:    Mapped[str | None] = mapped_column(Text, nullable=True)
     est_days_remaining: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -128,4 +148,15 @@ class EnergySession(Base):
     session_end:    Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     energy_kwh:     Mapped[float]    = mapped_column(Float, nullable=False, default=0.0)
     cost_inr:       Mapped[float]    = mapped_column(Float, nullable=False, default=0.0)
+    co2e_kg:        Mapped[float]    = mapped_column(Float, nullable=False, default=0.0)
+    
+    # Energy Waterfall Buckets
+    productive_kwh:  Mapped[float]   = mapped_column(Float, nullable=False, default=0.0)
+    idle_kwh:        Mapped[float]   = mapped_column(Float, nullable=False, default=0.0)
+    startup_kwh:     Mapped[float]   = mapped_column(Float, nullable=False, default=0.0)
+    reject_kwh:      Mapped[float]   = mapped_column(Float, nullable=False, default=0.0)
+    degradation_kwh: Mapped[float]   = mapped_column(Float, nullable=False, default=0.0)
+    peak_kwh:        Mapped[float]   = mapped_column(Float, nullable=False, default=0.0)
+    
+    good_units:     Mapped[int]      = mapped_column(Integer, nullable=False, default=0)
     is_active:      Mapped[bool]     = mapped_column(Boolean, nullable=False, default=True)

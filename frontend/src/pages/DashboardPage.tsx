@@ -5,14 +5,18 @@ import { useHistoricalReadings } from '../hooks/useHistoricalReadings';
 import { SensorReadoutGrid } from '../components/SensorReadoutGrid';
 import { MachineStatusCard } from '../components/MachineStatusCard';
 import { EnergyMetricsPanel } from '../components/EnergyMetricsPanel';
+import { EnergyWaterfall } from '../components/EnergyWaterfall';
 import { AlertLog } from '../components/AlertLog';
 import { StalenessBar } from '../components/StalenessBar';
 import { TrendChart } from '../components/TrendChart';
+import { QuickInsightsRibbon } from '../components/QuickInsightsRibbon';
+import { AiDiagnosticBanner } from '../components/AiDiagnosticBanner';
 import { formatTimestamp } from '../utils/format';
 import { Link } from 'react-router-dom';
 import { ChevronRight, MapPin, Cpu } from 'lucide-react';
 
 import { useMachine } from '../contexts/MachineContext';
+import { MachineSelector } from '../components/MachineSelector';
 
 export function DashboardPage() {
   const { selectedMachineId: MACHINE_ID, machines } = useMachine();
@@ -38,7 +42,7 @@ export function DashboardPage() {
           <div className="flex items-center gap-4" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}>
             <div className="flex items-center gap-1">
               <Cpu size={14} strokeWidth={1.5} color="var(--cyan)" />
-              ID: {MACHINE_ID}
+              ID: {currentMachine ? currentMachine.name.split(' ')[0] : MACHINE_ID}
             </div>
             <div className="flex items-center gap-1">
               <MapPin size={14} strokeWidth={1.5} color="var(--amber)" />
@@ -46,15 +50,18 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
-        {hasReading && (
-          <div style={{ textAlign: 'right', background: 'var(--bg-raised)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '4px' }}>LAST READING</div>
-            <div className="flex items-center gap-2" style={{ color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-              <div className="status-dot normal" style={{ width: 8, height: 8 }} />
-              {formatTimestamp(reading!.timestamp)}
+        <div className="flex items-center gap-6">
+          <MachineSelector />
+          {hasReading && (
+            <div style={{ textAlign: 'right', background: 'var(--bg-raised)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '4px' }}>LAST READING</div>
+              <div className="flex items-center gap-2" style={{ color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                <div className="status-dot normal" style={{ width: 8, height: 8 }} />
+                {formatTimestamp(reading!.timestamp)}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Staleness / disconnection indicator */}
@@ -80,6 +87,14 @@ export function DashboardPage() {
       {/* Main content — only shown once we have a reading */}
       {hasReading && (
         <>
+          <AiDiagnosticBanner reading={reading!} metrics={metrics} />
+          
+          <QuickInsightsRibbon 
+            reading={reading!} 
+            metrics={metrics} 
+            activeAlertCount={alerts.filter(a => !a.resolved_at).length} 
+          />
+
           {/* Machine status + Energy side by side */}
           <div
             style={{
@@ -91,7 +106,12 @@ export function DashboardPage() {
             className="status-energy-row"
           >
             <MachineStatusCard reading={reading!} />
-            <EnergyMetricsPanel metrics={metrics} loading={metricsLoading} />
+            <EnergyMetricsPanel metrics={metrics} loading={metricsLoading} reading={reading!} />
+          </div>
+
+          {/* Energy Waterfall */}
+          <div style={{ marginBottom: 'var(--space-4)' }}>
+            <EnergyWaterfall metrics={metrics} loading={metricsLoading} />
           </div>
 
           {/* Sensor readout grid */}

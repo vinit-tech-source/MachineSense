@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="footer" role="contentinfo">
       <span>
-        Vigil &mdash; Machine Health Console &copy; {new Date().getFullYear()} MachineSense
+        MachineSense &mdash; Machine Health Console &copy; {new Date().getFullYear()} MachineSense
       </span>
       <div className="flex gap-4">
         <Link to="/privacy" id="footer-privacy">Privacy Policy</Link>

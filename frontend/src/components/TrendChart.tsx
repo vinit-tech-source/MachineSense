@@ -1,7 +1,6 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import type { HistoricalPoint } from '../types';
 import { signalColor } from './SensorReadoutGrid';
-import { formatSignalLabel } from '../utils/format';
 
 type SignalKey = 'current_a' | 'voltage_v' | 'vibration_mm_s' | 'temp_c' | 'rpm' | 'power_w';
 
@@ -81,7 +80,7 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
             ctx.fillText(`${val.toFixed(0)}%`, PAD.left - 6, y + 3);
           } else {
             // Show real values for single signal
-            const { min, max, range } = signalData[0];
+            const { max, range } = signalData[0];
             const val = max - (i / gridLines) * range;
             ctx.fillText(val.toFixed(1), PAD.left - 6, y + 3);
           }

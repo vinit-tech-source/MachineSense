@@ -2,6 +2,8 @@
 
 export type MachineStatus = 'normal' | 'warning' | 'critical';
 
+export type OperatingState = 'off' | 'startup' | 'idle' | 'producing' | 'high_load' | 'overload';
+
 export type ConnectionState = 'connected' | 'connecting' | 'stale' | 'disconnected';
 
 /** A single sensor reading record. Fields match the specified data model exactly. */
@@ -14,7 +16,15 @@ export interface SensorReading {
   vibration_mm_s: number;        // mm/s RMS
   temp_c: number;                // Celsius
   rpm: number;                   // Revolutions per minute
+  power_factor: number | null;
+  count_in: number | null;
+  count_out: number | null;
+  reject_count: number | null;
+  pressure_bar: number | null;
+  is_simulated: boolean;
+  confidence_badge: string | null;
   status: MachineStatus;
+  operating_state: OperatingState;
   alert_reason: string | null;   // Plain-language explanation; null when status=normal
   est_days_remaining: number | null; // RUL estimate; null until sufficient baseline
   // 0–100 % severity score that keeps rising even after days hits the floor (5d).
@@ -28,6 +38,15 @@ export interface EnergyMetrics {
   power_w: number;               // Instantaneous power (W)
   energy_kwh: number;            // Accumulated since session start (kWh)
   cost_inr: number;              // Cost in INR at configured tariff
+  co2e_kg: number;               // Scope 2 CO2e emissions
+  productive_kwh: number;
+  idle_kwh: number;
+  startup_kwh: number;
+  reject_kwh: number;
+  degradation_kwh: number;
+  peak_kwh: number;
+  good_units: number;            // Accumulated good production units
+  sec: number | null;            // Specific Energy Consumption (kWh/good unit)
   session_start: string;         // ISO 8601
 }
 
@@ -81,6 +100,7 @@ export interface HistoricalPoint {
   rpm: number;
   power_w: number;
   status: MachineStatus;
+  operating_state: OperatingState;
 }
 
 /** Connection/feed state for the dashboard */
@@ -106,4 +126,31 @@ export interface BaselineStats {
 export interface ApiResponse<T> {
   data: T;
   error?: string;
+}
+
+/** Daily aggregated summary for comparison view */
+export interface DailySummary {
+  date: string;
+  machine_id: string;
+  run_hours: number;
+  good_units: number;
+  reject_units: number;
+  yield_pct: number;
+  total_kwh: number;
+  productive_kwh: number;
+  idle_kwh: number;
+  reject_kwh: number;
+  degradation_kwh: number;
+  peak_kwh: number;
+  total_cost_inr: number;
+  co2e_kg: number;
+  sec: number | null;
+  avg_current_a: number;
+  avg_vibration_mm_s: number;
+  avg_temp_c: number;
+  avg_rpm: number;
+  avg_power_factor: number | null;
+  alert_count: number;
+  idle_minutes: number;
+  rul_days_at_end: number | null;
 }

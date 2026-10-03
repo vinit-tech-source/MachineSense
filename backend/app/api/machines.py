@@ -134,6 +134,7 @@ async def get_readings_history(
             rpm=r.rpm,
             power_w=compute_power_w(r.current_a, r.voltage_v),
             status=r.status.value,  # type: ignore[arg-type]
+            operating_state=r.operating_state.value, # type: ignore[arg-type]
         )
         for r in rows
     ]
@@ -220,15 +221,136 @@ async def get_energy_metrics(machine_id: str, db: AsyncSession = Depends(get_db)
             power_w=power_w,
             energy_kwh=0.0,
             cost_inr=0.0,
+            co2e_kg=0.0,
+            productive_kwh=0.0,
+            idle_kwh=0.0,
+            startup_kwh=0.0,
+            reject_kwh=0.0,
+            degradation_kwh=0.0,
+            peak_kwh=0.0,
+            good_units=0,
+            sec=None,
             session_start=datetime.now(timezone.utc),
         )
+        
+    sec_value = None
+    if session.good_units > 0:
+        sec_value = round(session.energy_kwh / session.good_units, 4)
 
     return EnergyMetricsOut(
         power_w=power_w,
         energy_kwh=round(session.energy_kwh, 4),
         cost_inr=round(session.cost_inr, 4),
+        co2e_kg=round(session.co2e_kg, 4),
+        productive_kwh=round(session.productive_kwh, 4),
+        idle_kwh=round(session.idle_kwh, 4),
+        startup_kwh=round(session.startup_kwh, 4),
+        reject_kwh=round(session.reject_kwh, 4),
+        degradation_kwh=round(session.degradation_kwh, 4),
+        peak_kwh=round(session.peak_kwh, 4),
+        good_units=session.good_units,
+        sec=sec_value,
         session_start=session.session_start,
     )
+
+# ─── Daily Summaries ──────────────────────────────────────────────────────────
+
+from pydantic import BaseModel
+from typing import List
+
+class DailySummaryOut(BaseModel):
+    date: str
+    machine_id: str
+    run_hours: float
+    good_units: int
+    reject_units: int
+    yield_pct: float
+    total_kwh: float
+    productive_kwh: float
+    idle_kwh: float
+    reject_kwh: float
+    degradation_kwh: float
+    peak_kwh: float
+    total_cost_inr: float
+    co2e_kg: float
+    sec: float | None
+    avg_current_a: float
+    avg_vibration_mm_s: float
+    avg_temp_c: float
+    avg_rpm: float
+    avg_power_factor: float | None
+    alert_count: int
+    idle_minutes: int
+    rul_days_at_end: int | None
+
+@router.get(
+    "/{machine_id}/daily",
+    response_model=List[DailySummaryOut],
+    summary="Get daily summaries for comparative analysis",
+)
+async def get_daily_summaries(machine_id: str, days: int = 14, db: AsyncSession = Depends(get_db)):
+    # Note: In a production system, these are pre-calculated by a cron job into a DailySummary table.
+    # For this demonstration, we'll return mock data for yesterday and today based on the current session.
+    
+    # Get the active session to generate realistic numbers for "today"
+    result = await db.execute(
+        select(EnergySession)
+        .where(EnergySession.machine_id == machine_id)
+        .order_by(EnergySession.session_start.desc())
+        .limit(1)
+    )
+    session = result.scalar_one_or_none()
+    
+    today_date = datetime.now().strftime("%Y-%m-%d")
+    yesterday_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    import random
+    summaries = []
+    base_energy = session.energy_kwh if session else 50.0
+    base_units = session.good_units if session else 150
+    base_cost = session.cost_inr if session else 425.0
+    
+    for i in range(days):
+        date_str = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        
+        # Add some random variation
+        var = random.uniform(0.7, 1.2) if i > 0 else 1.0 # today is exactly the session data if available
+        
+        # Construct mock summary
+        energy = base_energy * var
+        units = max(1, int(base_units * var * random.uniform(0.9, 1.1)))
+        
+        summaries.append(
+            DailySummaryOut(
+                date=date_str,
+                machine_id=machine_id,
+                run_hours=6.0 if i == 0 else round(random.uniform(5.5, 8.0), 1),
+                good_units=units,
+                reject_units=int(units * random.uniform(0.01, 0.08)),
+                yield_pct=round(random.uniform(85, 98), 1),
+                total_kwh=energy,
+                productive_kwh=energy * random.uniform(0.7, 0.9),
+                idle_kwh=energy * random.uniform(0.05, 0.15),
+                reject_kwh=energy * random.uniform(0.01, 0.05),
+                degradation_kwh=energy * random.uniform(0.01, 0.05),
+                peak_kwh=(session.peak_kwh if session else 12.0) if i == 0 else (session.peak_kwh if session else 12.0) * random.uniform(0.9, 1.1),
+                total_cost_inr=base_cost * var,
+                co2e_kg=(session.co2e_kg if session else 15.0) * var,
+                sec=round(energy / units, 3),
+                avg_current_a=11.2 * random.uniform(0.9, 1.1),
+                avg_vibration_mm_s=2.8 * random.uniform(0.8, 1.4),
+                avg_temp_c=65.2 * random.uniform(0.9, 1.1),
+                avg_rpm=1455 * random.uniform(0.98, 1.02),
+                avg_power_factor=0.88 * random.uniform(0.95, 1.05),
+                alert_count=random.randint(0, 3),
+                idle_minutes=int((energy * random.uniform(0.05, 0.15)) * 10),
+                rul_days_at_end=42 - i,
+            )
+        )
+    
+    # Sort so oldest is first
+    summaries.reverse()
+    return summaries
 
 
 # ─── Alerts ───────────────────────────────────────────────────────────────────
@@ -265,6 +387,124 @@ async def get_alerts(
         ))
     return output
 
+
+# ─── Manual Analytics ───────────────────────────────────────────────────────────
+
+from app.schemas.schemas import ManualAnalyticsInput, ManualAnalyticsOut
+
+@router.post(
+    "/{machine_id}/manual-analytics",
+    response_model=ManualAnalyticsOut,
+    summary="Generate analytics and inference from manual production log",
+)
+async def generate_manual_analytics(
+    machine_id: str,
+    payload: ManualAnalyticsInput,
+    db: AsyncSession = Depends(get_db),
+) -> ManualAnalyticsOut:
+    # Query all readings for the given date (UTC)
+    try:
+        target_date = datetime.strptime(payload.date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(400, "Invalid date format. Use YYYY-MM-DD")
+        
+    start_dt = datetime.combine(target_date, datetime.min.time(), tzinfo=timezone.utc)
+    end_dt = start_dt + timedelta(days=1)
+    
+    result = await db.execute(
+        select(SensorReading)
+        .where(
+            SensorReading.machine_id == machine_id,
+            SensorReading.timestamp >= start_dt,
+            SensorReading.timestamp < end_dt
+        )
+    )
+    readings = result.scalars().all()
+    
+    if not readings:
+        return ManualAnalyticsOut(
+            date=payload.date,
+            machine_id=machine_id,
+            working_hours=payload.working_hours,
+            production_units=payload.production_units,
+            total_energy_kwh=0.0,
+            sec=0.0,
+            avg_power_w=0.0,
+            avg_temp_c=0.0,
+            avg_vibration_mm_s=0.0,
+            inference_text="No sensor data found for this date. Cannot generate energy or health inferences."
+        )
+
+    # Compute averages
+    temps = [r.temp_c for r in readings]
+    vibs = [r.vibration_mm_s for r in readings]
+    powers = [compute_power_w(r.current_a, r.voltage_v) for r in readings]
+    
+    avg_temp = sum(temps) / len(temps)
+    avg_vib = sum(vibs) / len(vibs)
+    avg_power = sum(powers) / len(powers)
+    
+    # Calculate energy assuming readings are 1 second apart (from simulator)
+    # Energy kWh = Sum(Power W) / 1000 / 3600
+    total_energy_kwh = sum(powers) / 3600000.0
+    
+    sec = total_energy_kwh / payload.production_units if payload.production_units > 0 else None
+    
+    from app.schemas.schemas import ProblemRemedy
+    problems = []
+    
+    expected_units_per_hour = 16.6  # Baseline assumption: 100 units / 6 hrs
+    actual_uph = payload.production_units / payload.working_hours
+    
+    if actual_uph < expected_units_per_hour * 0.8:
+        problems.append(ProblemRemedy(
+            problem=f"Low Production Rate ({actual_uph:.1f} units/hr). Target is {expected_units_per_hour:.1f}.",
+            remedy="Check for mechanical binding, worn tooling, or operator delays.",
+            severity="warning"
+        ))
+        
+        if avg_vib > 5.0:
+            problems.append(ProblemRemedy(
+                problem=f"High vibration ({avg_vib:.2f} mm/s) correlates with slow cycles.",
+                remedy="Inspect bearings and spindle balance immediately.",
+                severity="critical"
+            ))
+            
+        if avg_temp > 68.0:
+            problems.append(ProblemRemedy(
+                problem=f"Elevated temperature ({avg_temp:.1f}°C) may be causing thermal throttling.",
+                remedy="Clean cooling fins, check coolant flow, verify ambient temp.",
+                severity="warning"
+            ))
+    elif sec and sec > 0.05:
+        problems.append(ProblemRemedy(
+            problem=f"High Energy Intensity (SEC: {sec:.3f} kWh/unit).",
+            remedy="Machine is running but producing few units. Review micro-stoppages and idle time.",
+            severity="warning"
+        ))
+        
+    if not problems:
+        problems.append(ProblemRemedy(
+            problem="None detected.",
+            remedy="Production rate and energy efficiency are within nominal parameters.",
+            severity="info"
+        ))
+        
+    return ManualAnalyticsOut(
+        date=payload.date,
+        machine_id=machine_id,
+        working_hours=payload.working_hours,
+        production_units=payload.production_units,
+        total_energy_kwh=round(total_energy_kwh, 4),
+        cost_inr=round(total_energy_kwh * 8.5, 2), # Default tariff
+        co2e_kg=round(total_energy_kwh * 0.85, 2), # Grid factor
+        yield_rate_pct=round(min(100.0, (actual_uph / expected_units_per_hour) * 100), 1),
+        sec=round(sec, 4) if sec else None,
+        avg_power_w=round(avg_power, 2),
+        avg_temp_c=round(avg_temp, 2),
+        avg_vibration_mm_s=round(avg_vib, 2),
+        problems_detected=problems
+    )
 
 # ─── Baseline stats ───────────────────────────────────────────────────────────
 

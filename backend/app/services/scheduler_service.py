@@ -28,16 +28,32 @@ async def shift_report_loop(interval_hours: int = 8):
                 
                 # Calculate energy cost for the last 8 hours
                 since = datetime.now(timezone.utc) - timedelta(hours=interval_hours)
-                energy_result = await db.execute(
-                    select(func.sum(EnergySession.cost_inr))
+                
+                # Get energy cost per machine
+                machine_costs_result = await db.execute(
+                    select(EnergySession.machine_id, func.sum(EnergySession.cost_inr).label("machine_cost"))
                     .where(EnergySession.session_start >= since)
+                    .group_by(EnergySession.machine_id)
                 )
-                total_cost = energy_result.scalar() or 0.0
+                machine_costs = machine_costs_result.all()
+                
+                total_cost = sum((row.machine_cost or 0.0) for row in machine_costs)
+                
+                # Spot power creep / abnormal energy
+                abnormal_machines = []
+                if active_machines > 0:
+                    avg_cost = total_cost / active_machines
+                    # If a machine uses 50% more than the average, flag it
+                    threshold = avg_cost * 1.5
+                    for row in machine_costs:
+                        if (row.machine_cost or 0.0) > threshold and (row.machine_cost or 0.0) > 10.0:
+                            abnormal_machines.append(row.machine_id)
 
             logger.info("Sending scheduled shift report...")
             await notification_service.notify_shift_report(
                 active_machines=active_machines, 
-                total_cost=total_cost
+                total_cost=total_cost,
+                abnormal_machines=abnormal_machines
             )
         except asyncio.CancelledError:
             break

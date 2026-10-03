@@ -8,9 +8,9 @@ export function PrivacyPage() {
           Effective date: 1 October 2024
         </p>
 
-        <Section title="What data Vigil collects">
+        <Section title="What data MachineSense collects">
           <p>
-            Vigil collects sensor readings from the physical machine it is attached to:
+            MachineSense collects sensor readings from the physical machine it is attached to:
             electrical current (A), voltage (V), vibration (mm/s), temperature (°C), and rotational speed (RPM).
             These readings are stored in a database on infrastructure you control.
           </p>
@@ -33,7 +33,7 @@ export function PrivacyPage() {
 
         <Section title="Cookies and browser storage">
           <p>
-            Vigil uses browser localStorage to persist your settings (machine ID, tariff, display name).
+            MachineSense uses browser localStorage to persist your settings (machine ID, tariff, display name).
             No tracking cookies or third-party analytics scripts are included.
           </p>
         </Section>
@@ -47,7 +47,7 @@ export function PrivacyPage() {
 
         <Section title="Contact">
           <p>
-            For questions about this policy, contact the system administrator for your Vigil installation.
+            For questions about this policy, contact the system administrator for your MachineSense installation.
           </p>
         </Section>
       </div>

@@ -46,7 +46,7 @@ export function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <Cpu size={24} color="var(--cyan)" strokeWidth={1.5} />
           <span style={{ fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-primary)' }}>
-            VIGIL
+            MACHINESENSE
           </span>
         </div>
         
@@ -121,12 +121,12 @@ export function LandingPage() {
                 marginBottom: 'var(--space-8)',
                 maxWidth: '540px'
               }}>
-                Vigil gives manufacturing teams real-time visibility into machine health, abnormal behavior, maintenance risk, and energy consumption — before small problems become expensive downtime.
+                MachineSense gives manufacturing teams real-time visibility into machine health, abnormal behavior, maintenance risk, and energy consumption — before small problems become expensive downtime.
               </p>
               
               <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
                 <Link to="/dashboard" className="btn btn-primary" style={{ padding: '12px 28px', fontSize: 'var(--text-md)', fontWeight: 600, boxShadow: '0 4px 20px var(--cyan-glow)' }}>
-                  Explore Vigil
+                  Explore MachineSense
                 </Link>
                 <Link to="/dashboard" className="btn btn-secondary" style={{ padding: '12px 28px', fontSize: 'var(--text-md)', fontWeight: 500, border: '1px solid var(--border-default)' }}>
                   View Live Console →
@@ -283,7 +283,7 @@ export function LandingPage() {
             </div>
             <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
               <div style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--cyan-dim)', color: 'var(--cyan)', borderRadius: '4px', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                Vigil is designed to help teams act before the final step.
+                MachineSense is designed to help teams act before the final step.
               </div>
             </div>
           </div>
@@ -296,7 +296,7 @@ export function LandingPage() {
               <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--cyan)', letterSpacing: '0.1em', marginBottom: 'var(--space-4)' }}>DIGITAL TWIN</div>
               <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Your factory floor, mapped.</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6 }}>
-                Vigil automatically visualizes the machines you add in a high-fidelity 3D spatial layout, giving your operators immediate context of where alerts are happening.
+                MachineSense automatically visualizes the machines you add in a high-fidelity 3D spatial layout, giving your operators immediate context of where alerts are happening.
               </p>
             </div>
             
@@ -360,7 +360,7 @@ export function LandingPage() {
               <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 'var(--space-4)' }}>SEE THE MACHINE, NOT JUST THE ALARM</div>
               <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Understand what your machines are actually doing.</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6 }}>
-                Vigil continuously observes machine telemetry and gives operators a clear picture of machine behavior. Stop guessing what went wrong and look at the actual operational data in real-time.
+                MachineSense continuously observes machine telemetry and gives operators a clear picture of machine behavior. Stop guessing what went wrong and look at the actual operational data in real-time.
               </p>
             </div>
             
@@ -475,7 +475,7 @@ export function LandingPage() {
             <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', marginBottom: 'var(--space-10)' }}>
               <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Your machines define their own normal.</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6 }}>
-                Every machine behaves differently. Vigil learns the normal operating pattern of each machine and looks for meaningful deviations rather than relying only on rigid alarm thresholds.
+                Every machine behaves differently. MachineSense learns the normal operating pattern of each machine and looks for meaningful deviations rather than relying only on rigid alarm thresholds.
               </p>
             </div>
 
@@ -492,7 +492,7 @@ export function LandingPage() {
               </div>
 
               <div style={{ background: 'var(--bg-raised)', border: '1px solid var(--cyan-dim)', borderRadius: '8px', padding: 'var(--space-6)' }}>
-                <div style={{ fontSize: '10px', color: 'var(--cyan)', letterSpacing: '0.1em', marginBottom: 'var(--space-4)' }}>VIGIL APPROACH (MAD)</div>
+                <div style={{ fontSize: '10px', color: 'var(--cyan)', letterSpacing: '0.1em', marginBottom: 'var(--space-4)' }}>MACHINESENSE APPROACH (MAD)</div>
                 <div style={{ height: '60px', borderBottom: '1px solid rgba(0, 180, 216, 0.2)', position: 'relative', marginBottom: 'var(--space-2)' }}>
                   <svg width="100%" height="100%" preserveAspectRatio="none" style={{ stroke: 'var(--cyan)', strokeWidth: 1.5, fill: 'none' }}>
                     <path d="M0,40 Q20,35 40,40 T80,40 T120,38 T160,10 L165,5 L170,40 T210,15 T230,12 T250,18 T270,14 T290,16 T330,15" />
@@ -511,7 +511,7 @@ export function LandingPage() {
             <div>
               <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>From anomaly to maintenance risk.</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6, marginBottom: 'var(--space-6)' }}>
-                Once an abnormal condition persists, Vigil tracks its severity. The longer a machine operates outside its normal baseline, the higher the maintenance priority.
+                Once an abnormal condition persists, MachineSense tracks its severity. The longer a machine operates outside its normal baseline, the higher the maintenance priority.
               </p>
               <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
                 <div style={{ background: 'var(--bg-raised)', padding: '12px 16px', borderRadius: '4px', border: '1px solid var(--border-default)', flex: 1 }}>
@@ -587,7 +587,7 @@ export function LandingPage() {
                 <div style={{ background: 'var(--bg-base)', padding: '40px 16px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '32px', height: '32px', background: 'var(--cyan-dim)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cyan)' }}><Cpu size={18} /></div>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Vigil Alerts</div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>MachineSense Alerts</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Factory Floor Bot</div>
                   </div>
                 </div>
@@ -624,7 +624,7 @@ export function LandingPage() {
               </div>
               <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Automated mobile alerts & shift reporting.</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6, marginBottom: 'var(--space-6)' }}>
-                You don't need to be staring at a dashboard to know your factory is running smoothly. Vigil automatically pushes critical information directly to your pocket.
+                You don't need to be staring at a dashboard to know your factory is running smoothly. MachineSense automatically pushes critical information directly to your pocket.
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -661,7 +661,7 @@ export function LandingPage() {
             <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', marginBottom: 'var(--space-10)' }}>
               <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Know what every machine costs to run.</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6 }}>
-                Track machine-level power consumption, session energy usage, and electricity cost in real time. Every production session has an energy cost. Vigil makes it visible.
+                Track machine-level power consumption, session energy usage, and electricity cost in real time. Every production session has an energy cost. MachineSense makes it visible.
               </p>
             </div>
 
@@ -765,7 +765,7 @@ export function LandingPage() {
               <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
                 <div style={{ width: '48px', height: '48px', margin: '0 auto var(--space-4)', background: 'var(--bg-base)', border: '1px solid var(--border-strong)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>02</div>
                 <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--text-primary)', marginBottom: '8px' }}>OBSERVE</div>
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>Vigil continuously tracks behavior to build a baseline.</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>MachineSense continuously tracks behavior to build a baseline.</p>
               </div>
               <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
                 <div style={{ width: '48px', height: '48px', margin: '0 auto var(--space-4)', background: 'var(--bg-base)', border: '1px solid var(--border-strong)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>03</div>
@@ -821,7 +821,7 @@ export function LandingPage() {
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-6)' }}>Monitor machine health. Understand anomalies. Track energy. Act before downtime.</p>
               <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center' }}>
                 <Link to="/dashboard" className="btn btn-primary" style={{ padding: '12px 28px', fontSize: 'var(--text-md)', fontWeight: 600 }}>
-                  Explore Vigil →
+                  Explore MachineSense →
                 </Link>
                 <Link to="/dashboard" className="btn btn-secondary" style={{ padding: '12px 28px', fontSize: 'var(--text-md)', fontWeight: 500 }}>
                   View Live Console
@@ -838,7 +838,7 @@ export function LandingPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
                   <Cpu size={20} color="var(--text-muted)" />
-                  <span style={{ fontSize: 'var(--text-md)', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-primary)' }}>VIGIL</span>
+                  <span style={{ fontSize: 'var(--text-md)', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-primary)' }}>MACHINESENSE</span>
                 </div>
                 <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', maxWidth: '300px' }}>
                   Real-time machine health and energy intelligence for modern manufacturing.
@@ -860,7 +860,7 @@ export function LandingPage() {
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-default)', paddingTop: 'var(--space-6)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              <div>© 2026 Vigil. All rights reserved.</div>
+              <div>© 2026 MachineSense. All rights reserved.</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, letterSpacing: '0.05em' }}>
                 <span className="status-dot normal" style={{ width: 6, height: 6 }}></span> SYSTEM ONLINE
               </div>

@@ -3,10 +3,13 @@ import { AlertLog } from '../components/AlertLog';
 import { RefreshCw } from 'lucide-react';
 
 import { useMachine } from '../contexts/MachineContext';
+import { MachineSelector } from '../components/MachineSelector';
 
 export function AlertsPage() {
-  const { selectedMachineId: MACHINE_ID } = useMachine();
+  const { selectedMachineId: MACHINE_ID, machines } = useMachine();
   const { alerts, loading, refresh } = useAlerts(MACHINE_ID);
+  const currentMachine = machines.find(m => m.machine_id === MACHINE_ID);
+  const shortId = currentMachine ? currentMachine.name.split(' ')[0] : MACHINE_ID;
 
   const criticalCount = alerts.filter(a => a.status === 'critical').length;
   const warningCount  = alerts.filter(a => a.status === 'warning').length;
@@ -19,11 +22,13 @@ export function AlertsPage() {
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '4px' }}>EVENT LOG</div>
           <h1 style={{ marginBottom: 'var(--space-1)' }}>Alert History</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-            Full history of machine alerts with signal attribution for <code style={{ color: 'var(--cyan)' }}>{MACHINE_ID}</code>.
+            Full history of machine alerts with signal attribution for <code style={{ color: 'var(--cyan)' }}>{shortId}</code>.
           </p>
         </div>
-        <button
-          className="btn btn-secondary"
+        <div className="flex gap-4 items-center" style={{ flexWrap: 'wrap' }}>
+          <MachineSelector />
+          <button
+            className="btn btn-secondary"
           onClick={refresh}
           id="alerts-refresh"
           aria-label="Refresh alert log"
@@ -31,6 +36,7 @@ export function AlertsPage() {
           <RefreshCw size={14} strokeWidth={1.5} />
           Refresh
         </button>
+      </div>
       </div>
 
       {/* Summary counts */}
