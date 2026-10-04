@@ -49,9 +49,15 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
       // Extract values and min/max for each signal
       const signalData = signals.map(sig => {
         const vals = readings.map(r => sig === 'power_w' ? r.power_w : (r as unknown as Record<string, number>)[sig]);
-        const min = Math.min(...vals);
-        const max = Math.max(...vals);
-        const range = max - min || 1;
+        let min = Math.min(...vals);
+        let max = Math.max(...vals);
+        
+        // Add artificial padding to Y-axis so small noise doesn't look like huge spikes
+        const dataRange = max - min || 1;
+        min = Math.max(0, min - dataRange * 0.5); // Floor at 0 for physical values
+        max = max + dataRange * 0.5;
+        const range = max - min;
+        
         return { sig, vals, min, max, range, color: signalColor(sig) };
       });
 
@@ -59,7 +65,7 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
       
       // Grid lines
       if (showGrid) {
-        ctx.strokeStyle = 'rgba(42, 51, 64, 0.8)';
+        ctx.strokeStyle = 'rgba(42, 51, 64, 0.4)';
         ctx.lineWidth = 1;
         const gridLines = 4;
         for (let i = 0; i <= gridLines; i++) {
@@ -75,11 +81,9 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
           ctx.textAlign = 'right';
           
           if (isMulti) {
-            // Show percentage 0-100 for normalized chart
             const val = 100 - (i / gridLines) * 100;
             ctx.fillText(`${val.toFixed(0)}%`, PAD.left - 6, y + 3);
           } else {
-            // Show real values for single signal
             const { max, range } = signalData[0];
             const val = max - (i / gridLines) * range;
             ctx.fillText(val.toFixed(1), PAD.left - 6, y + 3);
@@ -103,8 +107,8 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
 
       // Draw each signal
       signalData.forEach((data, sIdx) => {
-        const { vals, min, range, color } = data;
-        // If multi, normalize to 0-1, else use real min/max
+        const { vals, min, max, range, color } = data;
+        
         const toY = (v: number) => {
           if (isMulti) {
             const norm = (v - min) / range;
@@ -114,7 +118,26 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
           }
         };
 
-        // Area fill (only if single signal or first signal in multi)
+        // Draw Warning Zone (top 20% of the chart) for single signals
+        if (!isMulti && sIdx === 0) {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.05)'; // Very faint red
+          ctx.fillRect(PAD.left, PAD.top, plotW, plotH * 0.25);
+          
+          // Danger threshold line
+          ctx.beginPath();
+          ctx.setLineDash([4, 4]);
+          ctx.moveTo(PAD.left, PAD.top + plotH * 0.25);
+          ctx.lineTo(PAD.left + plotW, PAD.top + plotH * 0.25);
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+          ctx.textAlign = 'left';
+          ctx.fillText('CRITICAL THRESHOLD', PAD.left + 4, PAD.top + plotH * 0.25 - 4);
+        }
+
+        // Area fill
         if (sIdx === 0) {
           const gradient = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + plotH);
           gradient.addColorStop(0, `${color}30`);
@@ -143,13 +166,29 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
         ctx.lineJoin = 'round';
         ctx.stroke();
 
-        // Latest value dot
+        // Latest value dot and text label
+        const lastVal = vals[vals.length - 1];
         const lastX = toX(vals.length - 1);
-        const lastY = toY(vals[vals.length - 1]);
+        const lastY = toY(lastVal);
+        
         ctx.beginPath();
         ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
+        
+        // Draw the exact value for clarity
+        if (!isMulti) {
+          ctx.fillStyle = color;
+          ctx.font = `bold 11px "Space Mono", monospace`;
+          ctx.textAlign = 'right';
+          // Draw a small background pill for the text
+          const text = lastVal.toFixed(1);
+          const tw = ctx.measureText(text).width;
+          ctx.fillStyle = 'var(--bg-card)';
+          ctx.fillRect(lastX - tw - 12, lastY - 14, tw + 8, 16);
+          ctx.fillStyle = color;
+          ctx.fillText(text, lastX - 8, lastY - 2);
+        }
       });
     };
 

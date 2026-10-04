@@ -182,24 +182,56 @@ async def simulate_machine(client: httpx.AsyncClient, machine_id: str, base_mult
         await asyncio.sleep(SIM_INTERVAL)
 
 
+# Persistent tracking of simulated machines
+# machine_id -> {"task": asyncio.Task, "mode": str, "base_mult": float}
+ACTIVE_TASKS = {}
+
+async def discover_and_simulate(client: httpx.AsyncClient):
+    print(f"[SIMULATOR] Discovery loop started. Target API: {API_URL}/api")
+    while True:
+        try:
+            resp = await client.get(f"{API_URL}/api/machines")
+            if resp.status_code == 200:
+                machines = resp.json()
+                t_start = time.monotonic()
+                for i, m in enumerate(machines):
+                    m_id = m["machine_id"]
+                    if m_id not in ACTIVE_TASKS:
+                        # Randomize baseline and mode for new machines
+                        base_mult = random.uniform(0.8, 1.2)
+                        mode = random.choices(
+                            ["normal", "fault_vibration", "fault_temp", "fault_current"], 
+                            weights=[0.7, 0.1, 0.1, 0.1]
+                        )[0]
+                        
+                        if m_id not in MACHINE_STATE:
+                            MACHINE_STATE[m_id] = {"count_in": 0, "count_out": 0, "reject_count": 0}
+                            
+                        print(f"[SIMULATOR] Discovered new machine {m_id}, starting simulation (mode={mode})")
+                        task = asyncio.create_task(simulate_machine(client, m_id, base_mult, mode, t_start))
+                        ACTIVE_TASKS[m_id] = {"task": task, "mode": mode, "base_mult": base_mult}
+        except Exception as e:
+            print(f"[ERROR] Discovery loop failed: {e}")
+            
+        await asyncio.sleep(10) # Check for new machines every 10s
+
 async def main() -> None:
-    print(f"[SIMULATOR] Target API: {API_URL}/api")
     print(f"[SIMULATOR] This is a development/demo tool. Not for production use.\n")
 
+    # Hardcoded machines just to ensure they exist on startup
+    INITIAL_MACHINES = {
+        "machine-001": (1.0, "normal"),
+        "machine-002": (1.2, "fault_vibration"),
+        "machine-003": (0.8, "normal"),
+    }
+
     async with httpx.AsyncClient(timeout=10.0) as client:
-        # 1. Register machines
-        for i, (m_id, _) in enumerate(SIMULATED_MACHINES.items()):
+        # Register initial machines
+        for i, (m_id, _) in enumerate(INITIAL_MACHINES.items()):
             await register_machine(client, m_id, f"Machine {m_id.split('-')[-1]}", power_kw=5.0 * (i+1))
-
-        # 2. Run simulation loops concurrently
-        t_start = time.monotonic()
-        tasks = []
-        for m_id, (base_mult, mode) in SIMULATED_MACHINES.items():
-            tasks.append(asyncio.create_task(simulate_machine(client, m_id, base_mult, mode, t_start)))
-            await asyncio.sleep(SIM_INTERVAL / len(SIMULATED_MACHINES)) # Stagger starts
-
-        await asyncio.gather(*tasks)
-
+            
+        # Start discovery loop (which will also pick up the initial machines)
+        await discover_and_simulate(client)
 
 if __name__ == "__main__":
     try:

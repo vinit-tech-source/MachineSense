@@ -220,7 +220,7 @@ function RULSection({ days, severityPct, machineId }: RULSectionProps) {
   const countdownColor = days > 30 ? 'var(--green)' : days > 10 ? 'var(--amber)' : 'var(--red)';
 
   // ── Severity tier (shown when at/near the floor AND severity is available) ──
-  const showSeverityBadge = isAtFloor && severityPct !== null;
+  const showSeverityBadge = isAtFloor && severityPct != null;
   const tier = showSeverityBadge ? getSeverityTier(severityPct!) : null;
 
   return (

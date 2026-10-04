@@ -13,6 +13,7 @@ import { AllMachinesPage } from './pages/AllMachinesPage';
 import { ComparePage } from './pages/ComparePage';
 import { LandingPage } from './pages/LandingPage';
 import { ManualAnalyticsPage } from './pages/ManualAnalyticsPage';
+import { AdvancedFeaturesPage } from './pages/AdvancedFeaturesPage';
 import { useLiveFeed } from './hooks/useLiveFeed';
 import { MachineProvider, useMachine } from './contexts/MachineContext';
 import { Outlet } from 'react-router-dom';
@@ -76,6 +77,7 @@ function MainLayout() {
           <Route path="/history"   element={<HistoryPage />} />
           <Route path="/analytics" element={<ManualAnalyticsPage />} />
           <Route path="/alerts"    element={<AlertsPage />} />
+          <Route path="/advanced"  element={<AdvancedFeaturesPage />} />
           <Route path="/settings"  element={<SettingsPage />} />
           <Route path="/privacy"   element={<PrivacyPage />} />
           <Route path="/terms"     element={<TermsPage />} />

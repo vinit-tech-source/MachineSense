@@ -1,6 +1,96 @@
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Activity, BarChart2, Bell, Settings, Cpu, Moon, Sun, ClipboardList } from 'lucide-react';
+import { Activity, BarChart2, Bell, Settings, Cpu, Moon, Sun, ClipboardList, Sparkles } from 'lucide-react';
 import type { FeedState } from '../types';
+import { useAlerts } from '../hooks/useAlerts';
+
+function NotificationDropdown({ machineId }: { machineId: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { alerts, loading } = useAlerts(machineId);
+
+  useEffect(() => {
+    const handleToggle = () => setIsOpen(prev => !prev);
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('#nav-alerts-btn') && !(e.target as HTMLElement).closest('.notif-dropdown')) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('toggle-notifications', handleToggle);
+    window.addEventListener('click', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('toggle-notifications', handleToggle);
+      window.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="notif-dropdown" style={{
+      position: 'absolute', top: 'calc(100% + 12px)', right: '-10px', 
+      width: '320px', 
+      background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+      borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', zIndex: 9999,
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      <div style={{ 
+        padding: '16px', borderBottom: '1px solid var(--border-default)', 
+        fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        background: 'var(--bg-surface)'
+      }}>
+        Recent Alerts
+        {alerts.length > 0 && <span style={{ fontSize: '11px', background: 'var(--cyan-dim)', color: 'var(--cyan)', padding: '2px 6px', borderRadius: '4px' }}>{alerts.length} New</span>}
+      </div>
+      
+      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+        {loading ? <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div> : 
+          alerts.length === 0 ? <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>You're all caught up! No new notifications.</div> :
+          alerts.slice(0, 5).map(alert => (
+            <div key={alert.id} style={{ 
+              padding: '16px', borderBottom: '1px solid var(--border-subtle)', 
+              display: 'flex', flexDirection: 'column', gap: '6px',
+              background: alert.status === 'critical' ? 'var(--red-dim)' : 'transparent',
+              transition: 'background var(--transition-fast)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '11px', color: alert.status === 'critical' ? 'var(--red)' : 'var(--amber)', fontWeight: 700, letterSpacing: '0.5px' }}>
+                  {alert.status.toUpperCase()}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+              <div style={{ 
+                fontSize: '13px', 
+                lineHeight: '1.5', 
+                color: 'var(--text-primary)',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {alert.alert_reason}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <NavLink to="/alerts" onClick={() => setIsOpen(false)} style={{ 
+        padding: '12px', textAlign: 'center', fontSize: '13px', 
+        color: 'var(--cyan)', textDecoration: 'none', fontWeight: 600,
+        background: 'var(--bg-elevated)',
+        borderTop: '1px solid var(--border-default)'
+      }}>
+        View all alerts →
+      </NavLink>
+    </div>
+  );
+}
 
 interface Props {
   feedState?: FeedState;
@@ -81,14 +171,48 @@ export function Navbar({ feedState }: Props) {
           <ClipboardList size={15} strokeWidth={1.5} />
           Analytics
         </NavLink>
+        
+        {/* Notification Bell Dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => {
+              // Instead of navigating, toggle dropdown
+              const evt = new CustomEvent('toggle-notifications');
+              window.dispatchEvent(evt);
+            }}
+            className="nav-link"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none' }}
+            id="nav-alerts-btn"
+          >
+            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bell size={16} strokeWidth={1.5} />
+              <span style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '1px',
+                background: 'var(--red)',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                display: 'block',
+                border: '2px solid var(--bg-base)'
+              }} />
+            </div>
+            Alerts
+          </button>
+          
+          <NotificationDropdown machineId={selectedMachineId || (machines[0]?.machine_id ?? 'machine-001')} />
+        </div>
+
         <NavLink
-          to="/alerts"
+          to="/advanced"
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-          id="nav-alerts"
+          id="nav-advanced"
         >
-          <Bell size={15} strokeWidth={1.5} />
-          Alerts
+          <Sparkles size={15} strokeWidth={1.5} color="var(--cyan)" />
+          Advanced
         </NavLink>
+
         <NavLink
           to="/settings"
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}

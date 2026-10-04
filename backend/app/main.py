@@ -76,6 +76,10 @@ def create_app() -> FastAPI:
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(ingest.router,    prefix="/api", tags=["Ingestion"])
     app.include_router(machines.router,  prefix="/api", tags=["Machines"])
+    
+    from app.api import copilot
+    app.include_router(copilot.router,   prefix="/api/copilot", tags=["Copilot"])
+    
     app.include_router(websocket.router,              tags=["Live Feed"])
 
     @app.get("/health", tags=["Health"])

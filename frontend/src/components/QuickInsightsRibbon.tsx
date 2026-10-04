@@ -15,7 +15,8 @@ export function QuickInsightsRibbon({ reading, metrics, activeAlertCount }: Quic
   const yieldPct = countIn > 0 ? (countOut / countIn) * 100 : 100;
 
   // 2. Real-time cost per hour
-  const powerKw = reading.power_w ? reading.power_w / 1000 : 0;
+  // SensorReading doesn't always have power_w on the frontend type depending on the backend version, calculate it
+  const powerKw = (reading.current_a * reading.voltage_v * (reading.power_factor || 0.85)) / 1000;
   // Assume a fixed tariff if not easily accessible here, or pass it down. 
   // Let's use 8.5 as a rough industrial average in INR.
   const costPerHour = powerKw * 8.5;

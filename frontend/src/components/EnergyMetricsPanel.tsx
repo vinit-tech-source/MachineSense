@@ -65,7 +65,7 @@ export function EnergyMetricsPanel({ metrics, loading, reading }: Props) {
         />
 
         {/* SEC and Units */}
-        {metrics.sec !== null && (
+        {metrics.sec != null && (
           <MetricRow
             icon={<Zap size={16} color="var(--purple, #9b59b6)" strokeWidth={1.5} />}
             label="Specific Energy (SEC)"

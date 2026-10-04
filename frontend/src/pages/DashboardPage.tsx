@@ -24,7 +24,7 @@ export function DashboardPage() {
   const { reading, feedState } = useLiveFeed(MACHINE_ID);
   const { metrics, loading: metricsLoading } = useEnergyMetrics(MACHINE_ID);
   const { alerts, loading: alertsLoading } = useAlerts(MACHINE_ID);
-  const { readings: history, loading: historyLoading } = useHistoricalReadings(MACHINE_ID, 1);
+  const { readings: history, loading: historyLoading } = useHistoricalReadings(MACHINE_ID, 1, reading);
 
   const hasReading = reading !== null;
   const currentMachine = machines.find(m => m.machine_id === MACHINE_ID);
@@ -95,6 +95,12 @@ export function DashboardPage() {
             activeAlertCount={alerts.filter(a => !a.resolved_at).length} 
           />
 
+          {/* Sensor readout grid FIRST for impact */}
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '8px' }}>LIVE SENSORS</div>
+            <SensorReadoutGrid reading={reading!} />
+          </div>
+
           {/* Machine status + Energy side by side */}
           <div
             style={{
@@ -112,11 +118,6 @@ export function DashboardPage() {
           {/* Energy Waterfall */}
           <div style={{ marginBottom: 'var(--space-4)' }}>
             <EnergyWaterfall metrics={metrics} loading={metricsLoading} />
-          </div>
-
-          {/* Sensor readout grid */}
-          <div style={{ marginBottom: 'var(--space-4)' }}>
-            <SensorReadoutGrid reading={reading!} />
           </div>
 
           {/* Trend charts */}

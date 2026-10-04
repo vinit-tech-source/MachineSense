@@ -14,7 +14,7 @@ export function AiDiagnosticBanner({ reading, metrics }: AiDiagnosticBannerProps
       ? (reading.count_out! / reading.count_in) * 100 
       : 100;
     
-    let text = `The machine is currently in ${reading.operating_state} state. `;
+    let text = `The machine is currently in ${(reading.operating_state || 'an unknown').replace('_', ' ')} state. `;
     
     if (reading.status === 'normal') {
       text += `Vibration and thermal signatures are perfectly aligned with the baseline profile. `;

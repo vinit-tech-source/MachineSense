@@ -27,12 +27,12 @@ export function formatValue(
   };
 
   const cfg = config[key];
-  const raw = reading[key] as number;
+  const raw = reading[key] as number | undefined | null;
 
   return {
     label: cfg.label,
     unit:  cfg.unit,
-    value: raw.toFixed(cfg.precision),
+    value: raw != null ? Number(raw).toFixed(cfg.precision) : '--',
   };
 }
 

@@ -1,8 +1,44 @@
 import { Link } from 'react-router-dom';
 import { Cpu, Activity, Shield, Zap, AlertTriangle, CheckCircle, Server, Info, Moon, Sun, Smartphone, MessageSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import { useTheme } from '../hooks/useTheme';
+
+const FadeInSection = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => {
+  const [isVisible, setVisible] = useState(false);
+  const domRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const currentRef = domRef.current;
+    if (!currentRef) return;
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(currentRef);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    
+    observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, []);
+  
+  return (
+    <div 
+      ref={domRef} 
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
+        transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
@@ -51,11 +87,11 @@ export function LandingPage() {
         </div>
         
         <div className="landing-nav-links" style={{ display: 'none', gap: 'var(--space-6)', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)' }}>
-          <a href="#product" className="hover:text-white transition-colors">Product</a>
-          <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
+          <a href="#problem" className="hover:text-white transition-colors">The Problem</a>
+          <a href="#digital-twin" className="hover:text-white transition-colors">Digital Twin</a>
           <a href="#intelligence" className="hover:text-white transition-colors">Intelligence</a>
-          <a href="#energy" className="hover:text-white transition-colors">Energy</a>
           <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+          <a href="#mobile-alerts" className="hover:text-white transition-colors">Mobile Alerts</a>
         </div>
 
         <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
@@ -232,6 +268,7 @@ export function LandingPage() {
         </section>
 
         {/* 11. PROBLEM SECTION */}
+        <FadeInSection>
         <section id="problem" style={{ padding: 'var(--space-12) 0', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', marginBottom: 'var(--space-10)' }}>
             <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 'var(--space-4)' }}>THE PROBLEM</div>
@@ -288,8 +325,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* DIGITAL TWIN / 3D LAYOUT SECTION */}
+        <FadeInSection>
         <section id="digital-twin" style={{ padding: 'var(--space-12) 0', background: 'var(--bg-base)', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', marginBottom: 'var(--space-8)' }}>
@@ -352,8 +391,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 12. MACHINE HEALTH SECTION */}
+        <FadeInSection>
         <section id="intelligence" style={{ padding: 'var(--space-12) 0', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
@@ -410,8 +451,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 13. MULTI-MACHINE SECTION */}
+        <FadeInSection>
         <section id="platform" style={{ padding: 'var(--space-12) 0', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-8)', textAlign: 'center' }}>One console. Every machine.</h2>
@@ -468,8 +511,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 14 & 15. ANOMALY DETECTION & FALSE ALARM */}
+        <FadeInSection>
         <section style={{ padding: 'var(--space-12) 0', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', marginBottom: 'var(--space-10)' }}>
@@ -504,8 +549,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 16 & 17. PREDICTIVE MAINTENANCE & SEVERITY */}
+        <FadeInSection>
         <section style={{ padding: 'var(--space-12) 0', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -562,8 +609,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 17.5. MOBILE ALERTS SECTION */}
+        <FadeInSection>
         <section id="mobile-alerts" style={{ padding: 'var(--space-16) 0', background: 'var(--bg-raised)', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             
@@ -654,8 +703,10 @@ export function LandingPage() {
 
           </div>
         </section>
+        </FadeInSection>
 
         {/* 18 & 19. ENERGY INTELLIGENCE */}
+        <FadeInSection>
         <section id="energy" style={{ padding: 'var(--space-12) 0', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto', marginBottom: 'var(--space-10)' }}>
@@ -702,8 +753,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 20. ALERTS SECTION */}
+        <FadeInSection>
         <section style={{ padding: 'var(--space-12) 0', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-8)', textAlign: 'center' }}>Know when something needs attention.</h2>
@@ -748,8 +801,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 21 & 22. HOW IT WORKS */}
+        <FadeInSection>
         <section id="how-it-works" style={{ padding: 'var(--space-12) 0', background: 'var(--bg-surface)', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-10)', textAlign: 'center' }}>How It Works</h2>
@@ -780,8 +835,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 23. SME FOCUS SECTION */}
+        <FadeInSection>
         <section style={{ padding: 'var(--space-12) 0', borderTop: '1px solid var(--border-subtle)' }}>
           <div className="container">
             <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: 'var(--space-8)', textAlign: 'center' }}>Industrial intelligence without industrial complexity.</h2>
@@ -802,8 +859,10 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 26. PRODUCT PHILOSOPHY & FINAL CTA */}
+        <FadeInSection>
         <section style={{ padding: 'var(--space-16) 0', background: 'var(--bg-base)', borderTop: '1px solid var(--border-subtle)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, background: 'radial-gradient(circle at center, var(--cyan) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
@@ -830,6 +889,7 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        </FadeInSection>
 
         {/* 29. FOOTER */}
         <footer style={{ padding: 'var(--space-8) 0', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>

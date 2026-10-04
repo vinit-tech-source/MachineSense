@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHistoricalReadings } from '../hooks/useHistoricalReadings';
 import { TrendChart } from '../components/TrendChart';
 import { formatTimestamp } from '../utils/format';
@@ -30,7 +30,13 @@ export function HistoryPage() {
   const { selectedMachineId: MACHINE_ID, machines } = useMachine();
   const [hours, setHours] = useState(1);
   const [activeSignals, setActiveSignals] = useState<SignalKey[]>(['vibration_mm_s', 'temp_c']);
+  const [visibleCount, setVisibleCount] = useState(20);
   const { readings, loading } = useHistoricalReadings(MACHINE_ID, hours);
+  
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [MACHINE_ID, hours]);
+
   const currentMachine = machines.find(m => m.machine_id === MACHINE_ID);
   const shortId = currentMachine ? currentMachine.name.split(' ')[0] : MACHINE_ID;
 
@@ -158,7 +164,7 @@ export function HistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {readings.slice(0, 200).map((r, i) => (
+                {readings.slice(0, visibleCount).map((r, i) => (
                   <tr key={i}>
                     <td style={{ fontFamily: 'var(--font-mono)' }}>{formatTimestamp(r.timestamp)}</td>
                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{r.current_a.toFixed(2)}</td>
@@ -178,9 +184,21 @@ export function HistoryPage() {
                 ))}
               </tbody>
             </table>
-            {readings.length > 200 && (
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', padding: 'var(--space-3) var(--space-4)' }}>
-                Showing 200 of {readings.length} records.
+            
+            {visibleCount < readings.length && (
+              <div style={{ padding: 'var(--space-4)', textAlign: 'center', borderTop: '1px solid var(--border-subtle)' }}>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
+                  Showing {visibleCount} of {readings.length} records.
+                </p>
+                <button onClick={() => setVisibleCount(prev => prev + 50)} className="btn btn-secondary">
+                  Load More
+                </button>
+              </div>
+            )}
+            
+            {visibleCount >= readings.length && readings.length > 0 && (
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', padding: 'var(--space-3) var(--space-4)', textAlign: 'center' }}>
+                Showing all {readings.length} records.
               </p>
             )}
           </div>
