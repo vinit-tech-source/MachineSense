@@ -1,9 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Zap, Eye, BatteryCharging, Factory, Package, X, Send, Camera, FileText, Brain, CheckCircle, ShieldAlert, BarChart } from 'lucide-react';
+﻿import React, { useState, useRef, useEffect } from 'react';
+import { Zap, Eye, BatteryCharging, Factory, Package, X, Send, Camera, FileText } from 'lucide-react';
 import { useMachine } from '../contexts/MachineContext';
-import { usePlant } from '../lib/yieldwatt/store';
-import { emitSample } from '../lib/yieldwatt/simulate';
-import { mulberry32 } from '../lib/yieldwatt/rng';
 
 type ModalType = 'copilot' | 'ar' | 'nilm' | 'po' | null;
 
@@ -23,9 +20,9 @@ function CopilotDemo({ selectedMachineId: _selectedMachineId, machineName }: { s
     "Why did energy cost spike?": (
       <>
         <p style={{ margin: '0 0 12px 0' }}>I analyzed the historical data and tariff rates for the past 48 hours.</p>
-        <p style={{ margin: '0 0 12px 0' }}>The machine ran with a high non-productive idle rate (34%) during the <strong>2:00 PM peak tariff window</strong>, consuming 45 kWh of idle energy at peak rates (₹12/kWh).</p>
+        <p style={{ margin: '0 0 12px 0' }}>The machine ran with a high non-productive idle rate (34%) during the <strong>2:00 PM peak tariff window</strong>, consuming 45 kWh of idle energy at peak rates (Γé╣12/kWh).</p>
         <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '13px' }}>
-          <strong>Recommendation:</strong> Schedule operator breaks outside of peak tariff windows to save approx. ₹540 daily.
+          <strong>Recommendation:</strong> Schedule operator breaks outside of peak tariff windows to save approx. Γé╣540 daily.
         </div>
       </>
     ),
@@ -159,32 +156,10 @@ export function AdvancedFeaturesPage() {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [gridStatus, setGridStatus] = useState<'Off-Peak' | 'Peak Demand'>('Off-Peak');
 
-  const [crossProof, setCrossProof] = useState<{ im1_flags_ex4: number, ex4_flags_ex4: number } | null>(null);
-  const plant = usePlant(s => s.plant);
-
-  useEffect(() => {
-    const im1 = plant.machines.find(m => m.engine.profile.id === 'IM-01');
-    const ex4 = plant.machines.find(m => m.engine.profile.id === 'EXTR-04');
-    
-    if (im1 && ex4) {
-      let im1Flags = 0;
-      let ex4Flags = 0;
-      const rng = mulberry32(1234);
-      
-      for (let i = 0; i < 100; i++) {
-        const s = emitSample(ex4.engine.profile, Date.now() + i*15000, rng, 'none', ex4.engine.profile.producingKw);
-        if (im1.engine.rawForestHit(s)) im1Flags++;
-        if (ex4.engine.rawForestHit(s)) ex4Flags++;
-      }
-      setCrossProof({ im1_flags_ex4: im1Flags, ex4_flags_ex4: ex4Flags });
-    }
-  }, [plant]);
-
   const closeModal = () => setActiveModal(null);
 
   return (
-    <main className="page" id="main-content" tabIndex={-1} style={{ position: 'relative' }}>
-      
+    <div className="page" style={{ position: 'relative' }}>
       <div style={{ marginBottom: 'var(--space-10)', maxWidth: '800px' }}>
         <h1 className="text-gradient" style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-2)' }}>
           Advanced Integrations
@@ -199,8 +174,7 @@ export function AdvancedFeaturesPage() {
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', 
         gap: 'var(--space-6)',
-        alignItems: 'stretch',
-        marginBottom: 'var(--space-10)'
+        alignItems: 'stretch'
       }}>
         
         {/* EcoStruxure Copilot */}
@@ -298,98 +272,6 @@ export function AdvancedFeaturesPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 'var(--space-8)', marginTop: 'var(--space-12)', paddingTop: 'var(--space-8)', borderTop: '1px solid var(--border-subtle)', maxWidth: '800px' }}>
-        <h1 className="text-gradient" style={{ fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-2)' }}>
-          YieldWatt ML Engine
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.6 }}>
-          Behind the scenes of the YieldWatt ML Engine.
-        </p>
-      </div>
-
-      <div className="card" style={{ marginBottom: 'var(--space-6)', background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', padding: 'var(--space-6)' }}>
-        <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Brain size={24} color="var(--cyan)" /> The 3 Learning Phases
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-          <div style={{ padding: 20, background: 'var(--bg-surface)', borderRadius: 12, borderTop: '3px solid var(--text-muted)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            <h3 style={{ fontSize: '15px', marginBottom: 12, fontWeight: 600, color: 'var(--text-primary)' }}>1. Commissioning</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Gathering the very first baseline samples. The system stays quiet while it observes raw sensor ranges.
-            </p>
-          </div>
-          <div style={{ padding: 20, background: 'var(--bg-surface)', borderRadius: 12, borderTop: '3px solid var(--amber)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            <h3 style={{ fontSize: '15px', marginBottom: 12, fontWeight: 600, color: 'var(--amber)' }}>2. Statistical</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Using robust z-scores to catch gross anomalies (e.g. machine turned off when it shouldn't be).
-            </p>
-          </div>
-          <div style={{ padding: 20, background: 'var(--bg-surface)', borderRadius: 12, borderTop: '3px solid var(--green)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-            <h3 style={{ fontSize: '15px', marginBottom: 12, fontWeight: 600, color: 'var(--green)' }}>3. ML Ready</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              An Isolation Forest is trained on the machine's unique multi-dimensional fingerprint. High precision fault detection.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginBottom: 'var(--space-6)', background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', padding: 'var(--space-6)' }}>
-        <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShieldAlert size={24} color="var(--amber)" /> The Value of Local Baselines
-        </h2>
-        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          <div style={{ flex: 1, padding: 32, background: 'var(--bg-surface)', borderRadius: 12, textAlign: 'center', border: '1px solid var(--red-dim)' }}>
-            <div style={{ fontSize: '42px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--red)', marginBottom: 12 }}>32-35</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Alerts per day<br/>(Fixed Global Thresholds)</div>
-          </div>
-          <div style={{ fontSize: '28px', color: 'var(--text-muted)', fontWeight: 300 }}>VS</div>
-          <div style={{ flex: 1, padding: 32, background: 'var(--bg-surface)', borderRadius: 12, textAlign: 'center', border: '1px solid var(--green-dim)' }}>
-            <div style={{ fontSize: '42px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>0</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Alerts per day on a healthy plant<br/>(YieldWatt Dynamic ML)</div>
-          </div>
-        </div>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: 24, textAlign: 'center', background: 'var(--bg-surface)', padding: '16px', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-          Fixed thresholds trigger false alarms for every machine that naturally runs hotter or draws more current.
-        </p>
-      </div>
-
-      <div className="card" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', padding: 'var(--space-6)' }}>
-        <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-5)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <BarChart size={24} color="var(--cyan)" /> Live ML Isolation Proof
-        </h2>
-        {crossProof ? (
-          <div style={{ background: 'var(--bg-surface)', padding: 32, borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
-            <p style={{ fontSize: '15px', marginBottom: 24, lineHeight: 1.5 }}>
-              We took 100 perfectly healthy samples from <strong>EXTR-04</strong> and ran them through two different Isolation Forest models:
-            </p>
-            <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-              <div style={{ flex: 1, padding: 24, borderLeft: '4px solid var(--red)', background: 'var(--bg-elevated)', borderRadius: '0 8px 8px 0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                <div style={{ fontSize: '36px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--red)', marginBottom: 8 }}>
-                  {crossProof.im1_flags_ex4}%
-                </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  Flagged as anomalous by <strong>IM-01's</strong> model
-                </div>
-              </div>
-              <div style={{ flex: 1, padding: 24, borderLeft: '4px solid var(--green)', background: 'var(--bg-elevated)', borderRadius: '0 8px 8px 0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-                <div style={{ fontSize: '36px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--green)', marginBottom: 8 }}>
-                  {crossProof.ex4_flags_ex4}%
-                </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  Flagged as anomalous by <strong>EXTR-04's</strong> own model
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2" style={{ fontSize: '14px', color: 'var(--text-primary)', background: 'var(--green-dim)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--green)' }}>
-              <CheckCircle size={18} color="var(--green)" />
-              <strong>Proof:</strong> The ML engine successfully learns the unique mechanical fingerprint of each specific machine.
-            </div>
-          </div>
-        ) : (
-          <div className="skeleton" style={{ height: 200, borderRadius: 12 }} />
-        )}
-      </div>
-
       {/* FULL-SCREEN IMMERSIVE DEMOS */}
       {activeModal && (
         <div style={{
@@ -450,11 +332,11 @@ export function AdvancedFeaturesPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Vibration</span>
-                        <span style={{ color: 'var(--red)' }}>4.2 mm/s ⚠️</span>
+                        <span style={{ color: 'var(--red)' }}>4.2 mm/s ΓÜá</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Temperature</span>
-                        <span style={{ color: 'var(--green)' }}>65.4 °C</span>
+                        <span style={{ color: 'var(--green)' }}>65.4 ┬░C</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Load</span>
@@ -575,8 +457,8 @@ export function AdvancedFeaturesPage() {
                           <span style={{ fontSize: '12px', color: '#666' }}>Part #SKF-6205-2RS1</span>
                         </td>
                         <td style={{ padding: '16px 12px', textAlign: 'center', color: '#1a1a1a' }}>2</td>
-                        <td style={{ padding: '16px 12px', textAlign: 'right', color: '#1a1a1a' }}>₹725.00</td>
-                        <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 'bold', color: '#1a1a1a' }}>₹1,450.00</td>
+                        <td style={{ padding: '16px 12px', textAlign: 'right', color: '#1a1a1a' }}>Γé╣725.00</td>
+                        <td style={{ padding: '16px 12px', textAlign: 'right', fontWeight: 'bold', color: '#1a1a1a' }}>Γé╣1,450.00</td>
                       </tr>
                     </tbody>
                   </table>
@@ -585,22 +467,22 @@ export function AdvancedFeaturesPage() {
                     <div style={{ width: '300px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: '#666' }}>
                         <span>Subtotal</span>
-                        <span>₹1,450.00</span>
+                        <span>Γé╣1,450.00</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: '#666', borderBottom: '1px solid #ddd' }}>
                         <span>Tax (18%)</span>
-                        <span>₹261.00</span>
+                        <span>Γé╣261.00</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', fontSize: '20px', fontWeight: 'bold', color: '#1a1a1a' }}>
                         <span>TOTAL</span>
-                        <span>₹1,711.00</span>
+                        <span>Γé╣1,711.00</span>
                       </div>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', borderTop: '1px solid #eee', paddingTop: '24px' }}>
                     <button className="btn" onClick={closeModal} style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '12px 24px' }}>Reject & Edit</button>
-                    <button className="btn" onClick={closeModal} style={{ background: '#0f172a', color: 'white', border: 'none', padding: '12px 24px', fontWeight: 'bold' }}>Authorize PO (₹1,711.00)</button>
+                    <button className="btn" onClick={closeModal} style={{ background: '#0f172a', color: 'white', border: 'none', padding: '12px 24px', fontWeight: 'bold' }}>Authorize PO (Γé╣1,711.00)</button>
                   </div>
                 </div>
               </div>
@@ -609,6 +491,7 @@ export function AdvancedFeaturesPage() {
         </div>
       )}
 
-    </main>
+
+    </div>
   );
 }

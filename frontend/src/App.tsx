@@ -3,6 +3,7 @@ import { useEffect, Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { EngineLoader } from './components/EngineLoader';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { AlertsPage } from './pages/AlertsPage';
@@ -138,7 +139,9 @@ function AppShell() {
     <ErrorBoundary>
       <MachineProvider>
         <BrowserRouter>
-          <MainLayout />
+          <EngineLoader>
+            <MainLayout />
+          </EngineLoader>
           <Footer />
         </BrowserRouter>
       </MachineProvider>

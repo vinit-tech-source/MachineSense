@@ -1,0 +1,54 @@
+## 1. Healthy plant, 7 days live (alert events per day; lower is better)
+machine   naive    v1       v2       
+IM-01     33.14    19.57    0.00     
+EXTR-04   32.29    17.14    0.00     
+CNC-02    35.29    15.57    0.00     
+
+## 1b. v2 healthy soak, 30 days live: IM-01: 0 alert events in 30 days; EXTR-04: 0 alert events in 30 days
+
+## 2. Abrupt faults, held 2 days after 1 healthy day.  detected / time-to-detect (min) / % of final-day samples still alerting
+machine/fault/sev         naive                   v1                      v2                      
+IM-01/bearing/0.3         Y 336m  pre:39  late:100Y 0m  pre:14  late:3%   Y 1m  pre:0  late:100%  
+IM-01/bearing/1           Y 336m  pre:39  late:100Y 0m  pre:14  late:3%   Y 1m  pre:0  late:100%  
+IM-01/power_factor/0.3    Y 336m  pre:39  late:93%Y 0m  pre:14  late:1%   Y 1m  pre:0  late:93%   
+IM-01/power_factor/1      Y 336m  pre:39  late:100Y 0m  pre:14  late:1%   Y 1m  pre:0  late:100%  
+IM-01/quality/0.3         Y 336m  pre:39  late:100Y 0m  pre:14  late:2%   Y 1m  pre:0  late:100%  
+IM-01/quality/1           Y 336m  pre:39  late:100Y 0m  pre:14  late:2%   Y 1m  pre:0  late:100%  
+EXTR-04/bearing/0.3       Y 336m  pre:39  late:100Y 0m  pre:16  late:3%   Y 1m  pre:0  late:100%  
+EXTR-04/bearing/1         Y 336m  pre:39  late:100Y 0m  pre:16  late:3%   Y 1m  pre:0  late:100%  
+EXTR-04/power_factor/0.3  Y 336m  pre:39  late:93%Y 0m  pre:16  late:1%   Y 1m  pre:0  late:85%   
+EXTR-04/power_factor/1    Y 336m  pre:39  late:100Y 0m  pre:16  late:1%   Y 1m  pre:0  late:100%  
+EXTR-04/quality/0.3       Y 336m  pre:39  late:100Y 0m  pre:16  late:1%   Y 1m  pre:0  late:100%  
+EXTR-04/quality/1         Y 336m  pre:39  late:100Y 0m  pre:16  late:1%   Y 1m  pre:0  late:100%  
+CNC-02/bearing/0.3        Y 0m  pre:34  late:100% Y 0m  pre:14  late:0%   Y 1m  pre:0  late:100%  
+CNC-02/bearing/1          Y 0m  pre:34  late:100% Y 0m  pre:14  late:0%   Y 1m  pre:0  late:100%  
+CNC-02/power_factor/0.3   Y 0m  pre:34  late:93%  Y 1m  pre:14  late:0%   Y 2m  pre:0  late:100%  
+CNC-02/power_factor/1     Y 0m  pre:34  late:100% Y 0m  pre:14  late:0%   Y 1m  pre:0  late:100%  
+CNC-02/quality/0.3        Y 1m  pre:34  late:2%   Y 213m  pre:14  late:1% N   -  m  pre:0  late:0%
+CNC-02/quality/1          Y 1m  pre:34  late:2%   Y 213m  pre:14  late:1% Y 64m  pre:0  late:100% 
+
+## 3. Gradual faults, severity ramps 0 -> 1 over 3 days.  detected at severity (lower is better)
+machine/fault           naive           v1              v2              
+IM-01/bearing           sev 2% (pre:36) sev 2% (pre:8)  sev 7% (pre:0)  
+IM-01/power_factor      sev 0% (pre:36) sev 1% (pre:8)  sev 32% (pre:0) 
+IM-01/quality           sev 0% (pre:36) sev 1% (pre:8)  sev 9% (pre:0)  
+EXTR-04/bearing         sev 2% (pre:33) sev 2% (pre:5)  sev 5% (pre:0)  
+EXTR-04/power_factor    sev 0% (pre:33) sev 1% (pre:5)  sev 20% (pre:0) 
+EXTR-04/quality         sev 0% (pre:33) sev 2% (pre:5)  sev 10% (pre:0) 
+CNC-02/bearing          sev 0% (pre:35) sev 0% (pre:9)  sev 9% (pre:0)  
+CNC-02/power_factor     sev 0% (pre:35) sev 0% (pre:9)  sev 32% (pre:0) 
+CNC-02/quality          sev 0% (pre:35) sev 4% (pre:9)  sev 50% (pre:0) 
+
+## 4. Benign drift (wear/season) 0 -> 1 over 3 days. False alert events during drift; v2 also: drift classified? / after operator confirm
+machine   naive     v1        v2          v2 shift-class / events-after-confirm
+IM-01     89        139       0           drift / 0
+EXTR-04   81        124       1           drift / 0
+CNC-02    109       119       0           drift / 0
+
+## 5. Idle waste (machine left idling overnight) and overload excursions (0.5% of run samples)
+IM-01 idle_waste      naive: Y 7m pre:24   v1: Y 7m pre:9   v2: Y 946m pre:0
+EXTR-04 idle_waste    naive: Y 7m pre:24   v1: Y 7m pre:7   v2: Y 946m pre:0
+CNC-02 idle_waste     naive: Y 7m pre:30   v1: Y 7m pre:10   v2: Y 946m pre:0
+IM-01 overload        naive: 65 events   v1: 34 events   v2: 0 events
+EXTR-04 overload      naive: 60 events   v1: 25 events   v2: 0 events
+CNC-02 overload       naive: 73 events   v1: 29 events   v2: 0 events
