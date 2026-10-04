@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
     # ── Lifespan ──────────────────────────────────────────────────────────────
     @app.on_event("startup")
     async def startup() -> None:
-        global _mqtt_task, _scheduler_task
+        global _mqtt_task, _scheduler_task, _simulator_task
         logger.info("Creating database tables...")
         await create_tables()
         logger.info("Starting MQTT subscriber...")
@@ -63,6 +63,16 @@ def create_app() -> FastAPI:
         logger.info("Starting shift report scheduler...")
         from app.services.scheduler_service import shift_report_loop
         _scheduler_task = asyncio.create_task(shift_report_loop(interval_hours=8), name="shift-scheduler")
+        
+        logger.info("Starting free cloud simulator...")
+        try:
+            import os
+            import simulator.simulate as sim
+            port = os.environ.get("PORT", "10000")
+            sim.API_URL = f"http://127.0.0.1:{port}"
+            _simulator_task = asyncio.create_task(sim.main(), name="simulator")
+        except Exception as e:
+            logger.error(f"Failed to start simulator: {e}")
 
     @app.on_event("shutdown")
     async def shutdown() -> None:
@@ -72,6 +82,8 @@ def create_app() -> FastAPI:
                 await _mqtt_task
             except asyncio.CancelledError:
                 pass
+        if '_simulator_task' in globals() and _simulator_task and not _simulator_task.done():
+            _simulator_task.cancel()
 
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(ingest.router,    prefix="/api", tags=["Ingestion"])
