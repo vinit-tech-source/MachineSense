@@ -113,34 +113,40 @@ def generate_reading_payload(machine_id: str, mode: str, base_mult: float, t: fl
 
 
 async def seed_machines_if_needed() -> None:
-    """Ensure baseline machines exist in the database."""
-    try:
-        async with AsyncSessionLocal() as session:
-            for m_id, (_, _, name, power_kw) in SIMULATED_MACHINES.items():
-                res = await session.execute(select(Machine).where(Machine.machine_id == m_id))
-                if res.scalar_one_or_none() is None:
-                    machine = Machine(
-                        machine_id=m_id,
-                        name=name,
-                        location="Factory Floor — Bay A",
-                        rated_power_kw=power_kw,
-                        tariff_inr_per_kwh=8.50,
-                    )
-                    session.add(machine)
-                    logger.info(f"Seeded machine: {m_id} ({name})")
-            await session.commit()
-    except Exception as e:
-        logger.error(f"Error seeding default machines: {e}")
+    """Ensure baseline machines exist in the database. Retries on failure."""
+    for attempt in range(5):
+        try:
+            async with AsyncSessionLocal() as session:
+                for m_id, (_, _, name, power_kw) in SIMULATED_MACHINES.items():
+                    res = await session.execute(select(Machine).where(Machine.machine_id == m_id))
+                    if res.scalar_one_or_none() is None:
+                        machine = Machine(
+                            machine_id=m_id,
+                            name=name,
+                            location="Factory Floor — Bay A",
+                            rated_power_kw=power_kw,
+                            tariff_inr_per_kwh=8.50,
+                        )
+                        session.add(machine)
+                        logger.info(f"Seeded machine: {m_id} ({name})")
+                await session.commit()
+            logger.info("Machine seeding complete.")
+            return
+        except Exception as e:
+            logger.warning(f"Seed attempt {attempt+1}/5 failed: {e}")
+            await asyncio.sleep(3 * (attempt + 1))
+    logger.error("Failed to seed machines after 5 attempts. Simulator will try to continue.")
 
 
 async def start_cloud_simulator() -> None:
     """Continuously generates telemetry directly into DB and broadcasts to WebSocket."""
     logger.info("Autonomous cloud simulator starting...")
-    await asyncio.sleep(2)  # Give DB migration a moment to settle
+    await asyncio.sleep(5)  # Give DB migration time to settle
     await seed_machines_if_needed()
 
     start_time = time.monotonic()
     cycle = 0
+    consecutive_errors = 0
 
     while True:
         try:
@@ -169,6 +175,7 @@ async def start_cloud_simulator() -> None:
 
                 await session.commit()
 
+            consecutive_errors = 0
             if cycle % 20 == 0:
                 logger.info(f"Cloud simulator running smoothly. Generated cycle #{cycle}.")
 
@@ -176,6 +183,12 @@ async def start_cloud_simulator() -> None:
             logger.info("Cloud simulator stopped.")
             break
         except Exception as exc:
-            logger.error(f"Error in cloud simulator iteration: {exc}", exc_info=False)
+            consecutive_errors += 1
+            logger.error(f"Simulator error (attempt {consecutive_errors}): {exc}")
+            if consecutive_errors > 10:
+                logger.error("Too many consecutive errors. Pausing simulator for 30s.")
+                await asyncio.sleep(30)
+                consecutive_errors = 0
 
         await asyncio.sleep(3.0)
+
