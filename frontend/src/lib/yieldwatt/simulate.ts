@@ -16,7 +16,6 @@ export interface SimOpts {
 
 function intendedState(
   profile: MachineProfile,
-  t: number,
   rng: () => number,
   overloadRate: number,
 ): OperatingState {
@@ -38,7 +37,7 @@ export function emitSample(
 ): Sample {
   const sev = opts.severity ?? 1;
   const drift = opts.drift ?? 0;
-  let state = intendedState(profile, t, rng, opts.overloadRate ?? 0.002);
+  let state = intendedState(profile, rng, opts.overloadRate ?? 0.002);
   if (fault === "idle_waste" && state === "OFF") state = "IDLE";
 
   let kw = 0.02;
