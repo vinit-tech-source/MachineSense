@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Cpu, Activity, AlertTriangle, Zap, Leaf, DollarSign, BarChart2, Brain, CheckCircle, TrendingDown } from 'lucide-react';
+import { Cpu, Activity, AlertTriangle, Zap, Leaf, DollarSign, Brain, CheckCircle, TrendingDown } from 'lucide-react';
 import { usePlant } from '../lib/yieldwatt/store';
 import type { MachineLive } from '../lib/yieldwatt/plant';
 

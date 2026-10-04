@@ -44,7 +44,7 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatTimestamp(iso: string): string {
+export function formatTimestamp(iso: string | number): string {
   return new Date(iso).toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -55,7 +55,7 @@ export function formatTimestamp(iso: string): string {
   });
 }
 
-export function formatRelativeTime(iso: string): string {
+export function formatRelativeTime(iso: string | number): string {
   const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (secs < 60)  return `${secs}s ago`;
   if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;

@@ -1,9 +1,9 @@
 import React from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Activity, ChevronRight, MapPin, Cpu, Brain, CheckCircle, TrendingDown } from 'lucide-react';
 import { usePlant } from '../lib/yieldwatt/store';
 import { formatTimestamp } from '../utils/format';
-import { ResponsiveContainer, LineChart, Line, AreaChart, Area, XAxis, YAxis, ReferenceLine, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, ReferenceLine, Tooltip, CartesianGrid } from 'recharts';
 
 function WhyPanel({ contributions }: { contributions: { feature: string; z: number }[] }) {
   const sorted = [...contributions].sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
@@ -264,8 +264,8 @@ export function DashboardPage() {
                   contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   itemStyle={{ color: 'var(--cyan)', fontWeight: 'bold' }}
                   labelStyle={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}
-                  formatter={(val: number) => [val.toFixed(4) + ' kWh/unit', 'SEC']}
-                  labelFormatter={(label) => new Date(label).toLocaleTimeString()}
+                  formatter={(val: any) => [Number(val).toFixed(4) + ' kWh/unit', 'SEC']}
+                  labelFormatter={(label: any) => new Date(label).toLocaleTimeString()}
                 />
                 <ReferenceLine 
                   y={profile.bestSec} 
@@ -314,15 +314,15 @@ export function DashboardPage() {
                   transition: 'all 0.2s ease',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = 'var(--cyan)';
-                  e.target.style.boxShadow = '0 0 0 2px var(--cyan-dim)';
+                  (e.target as HTMLElement).style.borderColor = 'var(--cyan)';
+                  (e.target as HTMLElement).style.boxShadow = '0 0 0 2px var(--cyan-dim)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'var(--border-default)';
-                  e.target.style.boxShadow = 'none';
+                  (e.target as HTMLElement).style.borderColor = 'var(--border-default)';
+                  (e.target as HTMLElement).style.boxShadow = 'none';
                 }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--bg-raised)'}
-                onMouseLeave={(e) => e.target.style.background = 'var(--bg-surface)'}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.background = 'var(--bg-raised)'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'var(--bg-surface)'}
               >
                 <option value="none">Healthy (No faults)</option>
                 <option value="bearing">Bearing wear</option>

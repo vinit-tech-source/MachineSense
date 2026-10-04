@@ -144,7 +144,8 @@ function fitEnergy(pairs: { kw: number; good: number }[]): EnergyModel {
 
 class Ring<T> {
   buf: T[] = [];
-  constructor(private cap: number) {}
+  private cap: number;
+  constructor(cap: number) { this.cap = cap; }
   push(v: T) {
     this.buf.push(v);
     if (this.buf.length > this.cap) this.buf.shift();
@@ -324,7 +325,7 @@ export class MachineIntelligence {
       else if (this.sinceRef >= REF_EVERY) this.refreshRef(false);
     }
 
-    this.updateDrift(values, energyPt);
+    this.updateDrift(values);
     this.maybeRefit();
     this.refreshPhase();
     return state;
@@ -411,7 +412,7 @@ export class MachineIntelligence {
     return { statHit, mlHit, energyHit, hit: statHit || mlHit || energyHit, score, z, residualKw: resid };
   }
 
-  private updateDrift(values: number[], pt: { kw: number; good: number }) {
+  private updateDrift(values: number[]) {
     if (!this.anchor) return;
     if (this.anchorSec == null && this.secBuf.length >= SEC_WINDOW && this.flags.every((f) => !f)) {
       this.anchorSec = this.rollingSec;
@@ -645,7 +646,7 @@ export class MachineIntelligence {
     let energyHit = false;
     let score: number | null = null;
     let z = zeros;
-    let residualKw = 0;
+    // residualKw not needed here
     if (g === "RUN" && this.adaptive) {
       const v = this.judge(values, pt);
       statHit = v.statHit;
@@ -653,9 +654,8 @@ export class MachineIntelligence {
       energyHit = v.energyHit;
       score = v.score;
       z = v.z;
-      residualKw = v.residualKw;
     } else if (g === "RUN") {
-      residualKw = this.residual(pt, this.energyAnchor ?? this.energy);
+      this.residual(pt, this.energyAnchor ?? this.energy);
     }
     const hit = statHit || mlHit || energyHit;
 
