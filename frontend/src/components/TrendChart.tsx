@@ -107,7 +107,7 @@ export function TrendChart({ readings, signals = [], height = 160, showGrid = tr
 
       // Draw each signal
       signalData.forEach((data, sIdx) => {
-        const { vals, min, max, range, color } = data;
+        const { vals, min, range, color } = data;
         
         const toY = (v: number) => {
           if (isMulti) {

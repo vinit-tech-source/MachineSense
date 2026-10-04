@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, CheckCircle2, Zap, AlertTriangle, ArrowRight, Activity, TrendingUp, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { ClipboardList, AlertTriangle, ArrowRight, Activity, TrendingUp, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { useMachine } from '../contexts/MachineContext';
 import { generateManualAnalytics, getDailySummaries } from '../api/client';
-import type { ManualAnalyticsOut, DailySummary } from '../api/client';
+import type { ManualAnalyticsOut } from '../api/client';
+import type { DailySummary } from '../types';
 import { MachineSelector } from '../components/MachineSelector';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
@@ -335,7 +336,7 @@ export function ManualAnalyticsPage() {
                           ))}
                         </Pie>
                         <Tooltip 
-                          formatter={(value: number) => [`${value.toFixed(1)} kWh`, '']}
+                          formatter={(value) => [`${Number(value as number).toFixed(1)} kWh`, ''] as [string, string]}
                           contentStyle={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', borderRadius: '8px' }}
                           itemStyle={{ fontSize: '13px', color: 'var(--text-primary)' }}
                         />

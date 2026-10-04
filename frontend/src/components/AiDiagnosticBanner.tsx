@@ -1,10 +1,9 @@
-import React from 'react';
-import { Sparkles, ArrowRight } from 'lucide-react';
-import type { SensorReading, EnergyMetricsOut } from '../api/client';
+import { Sparkles } from 'lucide-react';
+import type { SensorReading, EnergyMetrics } from '../types';
 
 interface AiDiagnosticBannerProps {
   reading: SensorReading;
-  metrics: EnergyMetricsOut | null;
+  metrics: EnergyMetrics | null;
 }
 
 export function AiDiagnosticBanner({ reading, metrics }: AiDiagnosticBannerProps) {

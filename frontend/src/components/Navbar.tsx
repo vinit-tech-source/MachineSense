@@ -125,7 +125,7 @@ import { useMachine } from '../contexts/MachineContext';
 import { useTheme } from '../hooks/useTheme';
 
 export function Navbar({ feedState }: Props) {
-  const { machines, selectedMachineId, setSelectedMachineId } = useMachine();
+  const { machines, selectedMachineId } = useMachine();
   const { theme, toggleTheme } = useTheme();
 
   return (

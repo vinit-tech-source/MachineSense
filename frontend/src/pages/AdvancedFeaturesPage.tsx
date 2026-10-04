@@ -4,7 +4,7 @@ import { useMachine } from '../contexts/MachineContext';
 
 type ModalType = 'copilot' | 'ar' | 'nilm' | 'po' | null;
 
-function CopilotDemo({ selectedMachineId, machineName }: { selectedMachineId: string, machineName: string }) {
+function CopilotDemo({ selectedMachineId: _selectedMachineId, machineName }: { selectedMachineId: string, machineName: string }) {
   const [messages, setMessages] = useState<{role: 'ai' | 'user', text: React.ReactNode}[]>([
     { role: 'ai', text: `Hello! I'm your AI factory assistant. What would you like to know about ${machineName}?` }
   ]);

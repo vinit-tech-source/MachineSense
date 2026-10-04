@@ -1,14 +1,13 @@
-import React from 'react';
 import { Target, Zap, Activity, AlertCircle } from 'lucide-react';
-import type { SensorReading, EnergyMetricsOut } from '../api/client';
+import type { SensorReading, EnergyMetrics } from '../types';
 
 interface QuickInsightsRibbonProps {
   reading: SensorReading;
-  metrics: EnergyMetricsOut | null;
+  metrics: EnergyMetrics | null;
   activeAlertCount: number;
 }
 
-export function QuickInsightsRibbon({ reading, metrics, activeAlertCount }: QuickInsightsRibbonProps) {
+export function QuickInsightsRibbon({ reading, metrics: _metrics, activeAlertCount }: QuickInsightsRibbonProps) {
   // 1. Yield
   const countIn = reading.count_in ?? 0;
   const countOut = reading.count_out ?? 0;
