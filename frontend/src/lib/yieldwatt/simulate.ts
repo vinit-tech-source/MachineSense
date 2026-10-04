@@ -20,10 +20,8 @@ function intendedState(
   rng: () => number,
   overloadRate: number,
 ): OperatingState {
-  const dayMin = (((t / 60000 + PLANT_UTC_OFFSET_MIN) % (24 * 60)) + 24 * 60) % (24 * 60);
-  const hour = dayMin / 60;
-  if (hour < 6 || hour > 22) return rng() > 0.85 ? "IDLE" : "OFF";
-  if (hour >= 12.0 && hour < 12.6) return "IDLE";
+  // Always run the factory for demo purposes regardless of time of day
+  // (Previously turned off between 22:00 and 06:00, causing blank charts during night demos)
   if (profile.kind === "compressor" && rng() < 0.12) return "IDLE";
   if (rng() < overloadRate) return "OVERLOAD";
   if (rng() < 0.04) return "HIGH_LOAD";
