@@ -44,9 +44,16 @@ def create_app() -> FastAPI:
     )
 
     # ── CORS ──────────────────────────────────────────────────────────────────
+    allowed_origins = list(set(settings.cors_origins_list + [
+        "https://machine-sense.vercel.app",
+        "https://machinesense.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]))
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
+        allow_origins=allowed_origins,
+        allow_origin_regex=r"https://.*\.vercel\.app",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -64,13 +71,10 @@ def create_app() -> FastAPI:
         from app.services.scheduler_service import shift_report_loop
         _scheduler_task = asyncio.create_task(shift_report_loop(interval_hours=8), name="shift-scheduler")
         
-        logger.info("Starting free cloud simulator...")
+        logger.info("Starting autonomous cloud simulator...")
         try:
-            import os
-            import simulator.simulate as sim
-            port = os.environ.get("PORT", "10000")
-            sim.API_URL = f"http://127.0.0.1:{port}"
-            _simulator_task = asyncio.create_task(sim.main(), name="simulator")
+            from app.services.cloud_simulator import start_cloud_simulator
+            _simulator_task = asyncio.create_task(start_cloud_simulator(), name="cloud-simulator")
         except Exception as e:
             logger.error(f"Failed to start simulator: {e}")
 
@@ -84,6 +88,10 @@ def create_app() -> FastAPI:
                 pass
         if '_simulator_task' in globals() and _simulator_task and not _simulator_task.done():
             _simulator_task.cancel()
+            try:
+                await _simulator_task
+            except asyncio.CancelledError:
+                pass
 
     # ── Routers ───────────────────────────────────────────────────────────────
     app.include_router(ingest.router,    prefix="/api", tags=["Ingestion"])
